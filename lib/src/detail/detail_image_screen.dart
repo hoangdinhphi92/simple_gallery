@@ -12,14 +12,21 @@ class DetailImageScreen extends StatefulWidget {
 }
 
 class _DetailImageScreenState extends State<DetailImageScreen> {
-  late final DetailValueNotifier _detailValueNotifier;
-  late final FileImage _imageProvider = FileImage(File(widget.imagePath));
+  late DetailValueNotifier _detailValueNotifier;
+  late FileImage _imageProvider;
 
   @override
   void initState() {
     super.initState();
-    _detailValueNotifier = DetailValueNotifier(widget.imagePath);
-    _getImageSize();
+    _perpareData(widget.imagePath);
+  }
+
+  @override
+  void didUpdateWidget(covariant DetailImageScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imagePath != widget.imagePath) {
+      _perpareData(widget.imagePath);
+    }
   }
 
   @override
@@ -31,6 +38,12 @@ class _DetailImageScreenState extends State<DetailImageScreen> {
         return Image(image: _imageProvider, fit: BoxFit.contain);
       },
     );
+  }
+
+  void _perpareData(String imagePath) {
+    _detailValueNotifier = DetailValueNotifier(imagePath);
+    _imageProvider = FileImage(File(imagePath));
+    _getImageSize();
   }
 
   void _getImageSize() {
