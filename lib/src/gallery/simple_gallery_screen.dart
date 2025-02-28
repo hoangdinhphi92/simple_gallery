@@ -16,8 +16,8 @@ class _SimpleGalleryScreenState extends State<SimpleGalleryScreen> {
     return PageView.builder(
       itemCount: widget.imagePaths.length,
         itemBuilder: (context, index) {
-        final item = widget.imagePaths[index];
-      return DetailImageScreen(imagePath: item,);
+        final imagePath = widget.imagePaths[index];
+      return DetailImageScreen(imagePath: imagePath,);
     });
   }
 }
