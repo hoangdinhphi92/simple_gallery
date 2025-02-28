@@ -1,16 +1,25 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src/detail/data/hero_data.dart';
-import 'package:simple_gallery/src/detail/notifier/detail_value_notifier.dart';
+import 'package:simple_gallery/src/detail/zoomable_image_widget.dart';
 
 class DetailImageScreen extends StatefulWidget {
-  final String imagePath;
-  final HeroData heroData;
+  final List<String> imagePaths;
+  final int initialImageIndex;
+  final double initialImageRatio;
+  final Widget? header;
+  final Widget? footer;
+  final double pageGap;
+  final double screenWidth;
 
   const DetailImageScreen({
     super.key,
-    required this.imagePath,
-    required this.heroData,
+    required this.imagePaths,
+    required this.initialImageIndex,
+    required this.initialImageRatio,
+    required this.screenWidth,
+    this.header,
+    this.footer,
+    this.pageGap = 16,
   });
 
   @override
@@ -18,82 +27,56 @@ class DetailImageScreen extends StatefulWidget {
 }
 
 class _DetailImageScreenState extends State<DetailImageScreen> {
-  late DetailValueNotifier _detailValueNotifier;
-  late FileImage _imageProvider;
+  late final PageController _pageController;
 
   @override
   void initState() {
     super.initState();
-    _perpareData(widget.imagePath);
-  }
-
-  @override
-  void didUpdateWidget(covariant DetailImageScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.imagePath != widget.imagePath) {
-      _perpareData(widget.imagePath);
-    }
+    _pageController = PageController(
+      initialPage: widget.initialImageIndex,
+      viewportFraction: 1 + (widget.pageGap / widget.screenWidth),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        _detailValueNotifier.onViewSizeChanged(constraints.biggest);
-
-        return Center(
-          child: Hero(
-            tag: widget.heroData.tag,
-            flightShuttleBuilder: _buildFlightShuttle,
-            child: Image(
-              image: _imageProvider,
-              fit: BoxFit.contain,
-              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                if (wasSynchronouslyLoaded || frame != null) {
-                  return child;
-                }
-
-                final imageRatio = widget.heroData.imageRatio;
-
-                if (imageRatio == null) return child;
-
-                return AspectRatio(aspectRatio: imageRatio, child: child);
-              },
-            ),
-          ),
-        );
-      },
+    return Stack(
+      children: [
+        Positioned.fill(child: _buildPageView()),
+        if (widget.header != null)
+          Positioned(top: 0, left: 0, right: 0, child: widget.header!),
+        if (widget.footer != null)
+          Positioned(bottom: 0, left: 0, right: 0, child: widget.footer!),
+      ],
     );
   }
 
-  Widget _buildFlightShuttle(
-    BuildContext flightContext,
-    Animation<double> animation,
-    HeroFlightDirection flightDirection,
-    BuildContext fromHeroContext,
-    BuildContext toHeroContext,
-  ) {
-    if (flightDirection == HeroFlightDirection.push) {
-      return fromHeroContext.widget;
-    }
-    return toHeroContext.widget;
-  }
+  LayoutBuilder _buildPageView() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return PageView.builder(
+          controller: _pageController,
+          itemCount: widget.imagePaths.length,
+          itemBuilder: (context, index) {
+            final imagePath = widget.imagePaths[index];
+            final heroData = HeroData(
+              tag: widget.imagePaths[index],
+              imageRatio:
+                  widget.initialImageIndex == index
+                      ? widget.initialImageRatio
+                      : null,
+            );
 
-  void _perpareData(String imagePath) {
-    _detailValueNotifier = DetailValueNotifier(imagePath);
-    _imageProvider = FileImage(File(imagePath));
-    _getImageSize();
-  }
-
-  void _getImageSize() {
-    final imageStream = _imageProvider.resolve(ImageConfiguration());
-
-    final listener = ImageStreamListener((info, _) {
-      _detailValueNotifier.setImageSize(
-        Size(info.image.width.toDouble(), info.image.height.toDouble()),
-      );
-    });
-
-    imageStream.addListener(listener);
+            return FractionallySizedBox(
+              widthFactor: 1 / _pageController.viewportFraction,
+              child: ZoomableImageWidget(
+                imagePath: imagePath,
+                heroData: heroData,
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }

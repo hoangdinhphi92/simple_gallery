@@ -1,54 +1,138 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/simple_gallery.dart';
-import 'package:simple_gallery/src/detail/data/hero_data.dart';
+import 'package:simple_gallery/src/utils/build_context_extension.dart';
 
 class SimpleGalleryScreen extends StatefulWidget {
-  final int initialImageIndex;
-  final double initialImageRatio;
-
   final List<String> imagePaths;
-  final List<String> heroTags;
+  final int crossAxisCount;
+  final double crossAxisSpacing;
+  final double mainAxisSpacing;
+  final double childAspectRatio;
+  final EdgeInsets padding;
+  final Widget? backgroundWidget;
 
-  SimpleGalleryScreen({
+  const SimpleGalleryScreen({
     super.key,
     required this.imagePaths,
-    required this.initialImageIndex,
-    required this.initialImageRatio,
-    required this.heroTags,
-  }) {
-    assert(
-      imagePaths.length == heroTags.length,
-      "imagePaths length must equal heroTags length.",
-    );
-  }
+    this.crossAxisCount = 3,
+    this.crossAxisSpacing = 4.0,
+    this.mainAxisSpacing = 4.0,
+    this.childAspectRatio = 1.0,
+    this.padding = EdgeInsets.zero,
+    this.backgroundWidget,
+  });
 
   @override
   State<SimpleGalleryScreen> createState() => _SimpleGalleryScreenState();
 }
 
 class _SimpleGalleryScreenState extends State<SimpleGalleryScreen> {
-  late final PageController _pageController = PageController(
-    initialPage: widget.initialImageIndex,
-  );
+  final Map<String, double> _imageRatioMap = {};
 
   @override
   Widget build(BuildContext context) {
-    return PageView.builder(
-      controller: _pageController,
-      itemCount: widget.imagePaths.length,
-      itemBuilder: (context, index) {
-        final imagePath = widget.imagePaths[index];
+    return Stack(
+      children: [
+        Positioned.fill(child: _buildBackground()),
+        Positioned.fill(child: _buildGridListImage()),
+      ],
+    );
+  }
 
-        final heroData = HeroData(
-          tag: widget.heroTags[index],
-          imageRatio:
-              widget.initialImageIndex == index
-                  ? widget.initialImageRatio
-                  : null,
+  Widget _buildGridListImage() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GridView.builder(
+          scrollDirection: Axis.vertical,
+          padding: widget.padding,
+          itemCount: widget.imagePaths.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: widget.crossAxisCount,
+            childAspectRatio: widget.childAspectRatio,
+            crossAxisSpacing: widget.crossAxisSpacing,
+            mainAxisSpacing: widget.mainAxisSpacing,
+          ),
+          itemBuilder: (context, index) {
+            final imagePath = widget.imagePaths[index];
+            return _buildGridItem(
+              context,
+              imagePath,
+              index,
+              constraints.maxWidth,
+            );
+          },
         );
-
-        return DetailImageScreen(imagePath: imagePath, heroData: heroData);
       },
+    );
+  }
+
+  Widget _buildBackground() {
+    return widget.backgroundWidget ?? ColoredBox(color: Colors.white);
+  }
+
+  GestureDetector _buildGridItem(
+    BuildContext context,
+    String imagePath,
+    int index,
+    double maxWidth,
+  ) {
+    final imageProvider = ResizeImage.resizeIfNeeded(
+      ((maxWidth / widget.crossAxisCount) * context.devicePixelRatio).toInt(),
+      null,
+      FileImage(File(imagePath)),
+    );
+
+    _getImageSize(imageProvider, imagePath);
+
+    return GestureDetector(
+      onTap:
+          () => _navigateToSimpleGallery(context, index, imagePath, maxWidth),
+      child: Hero(
+        tag: imagePath,
+        child: Image(image: imageProvider, fit: BoxFit.cover),
+      ),
+    );
+  }
+
+  void _getImageSize(ImageProvider imageProvider, String imagePath) {
+    if (_imageRatioMap[imagePath] != null) return;
+
+    final imageStream = imageProvider.resolve(ImageConfiguration());
+
+    final listener = ImageStreamListener((info, _) {
+      _imageRatioMap[imagePath] =
+          info.image.width.toDouble() / info.image.height;
+    });
+
+    imageStream.addListener(listener);
+  }
+
+  void _navigateToSimpleGallery(
+    BuildContext context,
+    int index,
+    String imagePath,
+    double screenWidth,
+  ) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (_, animation, secondaryAnimation) {
+          return DetailImageScreen(
+            imagePaths: widget.imagePaths,
+            initialImageIndex: index,
+            initialImageRatio: _imageRatioMap[imagePath] ?? 1.0,
+            screenWidth: screenWidth,
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+        reverseTransitionDuration: const Duration(milliseconds: 300),
+      ),
     );
   }
 }

@@ -1,9 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:simple_gallery_example/ui/example_gallery_screen.dart';
-import 'package:simple_gallery_example/utils/buildcontext_extension.dart';
+import 'package:simple_gallery/simple_gallery.dart';
 
 const kGridItemPadding = 4.0;
 const kCrossAxisCount = 3;
@@ -37,65 +34,16 @@ class _PickImageScreenState extends State<PickImageScreen> {
         child: Column(
           children: [
             _buildHeader(),
-            if (imageFiles.isNotEmpty)
-              Expanded(
-                child: GridView.builder(
-                  scrollDirection: Axis.vertical,
-                  itemCount: imageFiles.length,
-                  padding: EdgeInsets.all(kGridItemPadding),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: kCrossAxisCount,
-                    childAspectRatio: 1.0,
-                    crossAxisSpacing: kGridItemPadding,
-                    mainAxisSpacing: kGridItemPadding,
-                  ),
-                  itemBuilder: (context, index) {
-                    final imagePath = imageFiles[index];
-                    return _buildGridItem(context, imagePath, index);
-                  },
-                ),
+            Expanded(
+              child: SimpleGalleryScreen(
+                imagePaths: imageFiles,
+                padding: EdgeInsets.symmetric(horizontal: 4),
               ),
+            ),
           ],
         ),
       ),
     );
-  }
-
-  final Map<String, double> _imageRatioMap = {};
-
-  GestureDetector _buildGridItem(
-    BuildContext context,
-    String imagePath,
-    int index,
-  ) {
-    final imageProvider = ResizeImage.resizeIfNeeded(
-      ((context.viewSize.width / kCrossAxisCount) * context.devicePixelRatio)
-          .toInt(),
-      null,
-      FileImage(File(imagePath)),
-    );
-
-    _getImageSize(imageProvider, imagePath);
-    return GestureDetector(
-      onTap: () => _navigateToSimpleGallery(context, index, imagePath),
-      child: Hero(
-        tag: imagePath,
-        child: Image(image: imageProvider, fit: BoxFit.cover),
-      ),
-    );
-  }
-
-  void _getImageSize(ImageProvider imageProvider, String imagePath) {
-    if (_imageRatioMap[imagePath] != null) return;
-
-    final imageStream = imageProvider.resolve(ImageConfiguration());
-
-    final listener = ImageStreamListener((info, _) {
-      _imageRatioMap[imagePath] =
-          info.image.width.toDouble() / info.image.height;
-    });
-
-    imageStream.addListener(listener);
   }
 
   Widget _buildHeader() {
@@ -113,32 +61,6 @@ class _PickImageScreenState extends State<PickImageScreen> {
             icon: Icon(Icons.add),
           ),
         ],
-      ),
-    );
-  }
-
-  void _navigateToSimpleGallery(
-    BuildContext context,
-    int index,
-    String imagePath,
-  ) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        opaque: false,
-        pageBuilder: (_, animation, secondaryAnimation) {
-          return ExampleGalleryScreen(
-            imagePaths: imageFiles,
-            initialImageIndex: index,
-            initialImageRatio: _imageRatioMap[imagePath]!,
-            heroTags: imageFiles,
-          );
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-        reverseTransitionDuration: const Duration(milliseconds: 300),
       ),
     );
   }
