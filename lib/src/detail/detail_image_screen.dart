@@ -7,13 +7,28 @@ typedef DetailImageHeaderBuidler = Widget Function(BuildContext context);
 typedef DetailImageFooterBuidler = Widget Function(BuildContext context);
 
 class DetailImageScreen extends StatefulWidget {
+  /// List of image file paths to display in the detail view.
   final List<String> imagePaths;
+
+  /// Index of the initially displayed image.
   final int initialImageIndex;
+
+  /// Aspect ratio of the initially displayed image.
   final double initialImageRatio;
+
+  /// Builder for the header widget (e.g., title, close button).
   final DetailImageHeaderBuidler? headerBuilder;
+
+  /// Builder for the footer widget (e.g., captions, controls).
   final DetailImageFooterBuidler? footerBuilder;
+
+  /// Gap between images when swiping in the PageView.
   final double pageGap;
+
+  /// Width of the screen, used for calculating viewport fraction.
   final double screenWidth;
+
+  /// Optional background widget for the detail image screen.
   final Widget? backgroundWidget;
 
   const DetailImageScreen({
