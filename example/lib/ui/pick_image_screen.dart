@@ -39,30 +39,9 @@ class _PickImageScreenState extends State<PickImageScreen> {
               child: SimpleGalleryScreen(
                 imagePaths: imageFiles,
                 padding: EdgeInsets.symmetric(horizontal: 4),
-                detailImageHeaderBuilder: (context) {
-                  return _buildDetailImageHeader(context);
-                },
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailImageHeader(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(top: context.viewPadding.top),
-      child: SizedBox(
-        height: 48,
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: IconButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            icon: Icon(Icons.arrow_back),
-          ),
         ),
       ),
     );
