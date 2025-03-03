@@ -104,7 +104,7 @@ class _SimpleGalleryScreenState extends State<SimpleGalleryScreen> {
     return widget.backgroundWidget ?? ColoredBox(color: Colors.white);
   }
 
-  GestureDetector _buildGridItem(
+  Widget _buildGridItem(
     BuildContext context,
     String imagePath,
     int index,
@@ -120,7 +120,7 @@ class _SimpleGalleryScreenState extends State<SimpleGalleryScreen> {
 
     return GestureDetector(
       onTap:
-          () => _navigateToSimpleGallery(context, index, imagePath, maxWidth),
+          () => _navigateToDetailImageScreen(context, index, imagePath, maxWidth),
       child: Hero(
         tag: imagePath,
         child: Image(image: imageProvider, fit: BoxFit.cover),
@@ -141,7 +141,7 @@ class _SimpleGalleryScreenState extends State<SimpleGalleryScreen> {
     imageStream.addListener(listener);
   }
 
-  void _navigateToSimpleGallery(
+  void _navigateToDetailImageScreen(
     BuildContext context,
     int index,
     String imagePath,

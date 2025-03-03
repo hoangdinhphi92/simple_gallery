@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:simple_gallery/simple_gallery.dart';
-import 'package:simple_gallery_example/utils/build_context_extension.dart';
 
 const kGridItemPadding = 4.0;
 const kCrossAxisCount = 3;

@@ -77,7 +77,7 @@ class _DetailImageScreenState extends State<DetailImageScreen> {
     );
   }
 
-  LayoutBuilder _buildPageView() {
+  Widget _buildPageView() {
     return LayoutBuilder(
       builder: (context, constraints) {
         return PageView.builder(
