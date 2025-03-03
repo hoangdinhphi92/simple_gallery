@@ -8,16 +8,37 @@ typedef DetailImageScreenBuilder =
     DetailImageScreen Function(BuildContext context);
 
 class SimpleGalleryScreen extends StatefulWidget {
+  /// List of image file paths to be displayed in the gallery.
   final List<String> imagePaths;
+
+  /// Number of columns in the grid layout.
   final int crossAxisCount;
+
+  /// Spacing between columns in the grid.
   final double crossAxisSpacing;
+
+  /// Spacing between rows in the grid.
   final double mainAxisSpacing;
+
+  /// Aspect ratio of each grid item (width / height).
   final double childAspectRatio;
+
+  /// Padding around the grid.
   final EdgeInsets padding;
+
+  /// Optional background widget for the gallery screen.
   final Widget? backgroundWidget;
+
+  /// Optional background widget for the detail image screen.
   final Widget? detailImageBackgroundWidget;
+
+  /// Builder for the header widget in the detail image screen.
   final DetailImageHeaderBuidler? detailImageHeaderBuilder;
+
+  /// Builder for the footer widget in the detail image screen.
   final DetailImageFooterBuidler? detailImageFooterBuilder;
+
+  /// Gap between images when swiping in the detail image screen.
   final double detailImagePageGap;
 
   const SimpleGalleryScreen({
