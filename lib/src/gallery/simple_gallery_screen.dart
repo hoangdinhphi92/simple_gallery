@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:simple_gallery/simple_gallery.dart';
 import 'package:simple_gallery/src/utils/build_context_extension.dart';
 
+typedef DetailImageScreenBuilder =
+    DetailImageScreen Function(BuildContext context);
+
 class SimpleGalleryScreen extends StatefulWidget {
   final List<String> imagePaths;
   final int crossAxisCount;
@@ -15,6 +18,7 @@ class SimpleGalleryScreen extends StatefulWidget {
   final Widget? detailImageBackgroundWidget;
   final DetailImageHeaderBuidler? detailImageHeaderBuilder;
   final DetailImageFooterBuidler? detailImageFooterBuilder;
+  final double detailImagePageGap;
 
   const SimpleGalleryScreen({
     super.key,
@@ -28,6 +32,7 @@ class SimpleGalleryScreen extends StatefulWidget {
     this.detailImageBackgroundWidget,
     this.detailImageHeaderBuilder,
     this.detailImageFooterBuilder,
+    this.detailImagePageGap = 16,
   });
 
   @override
@@ -134,6 +139,7 @@ class _SimpleGalleryScreenState extends State<SimpleGalleryScreen> {
             backgroundWidget: widget.detailImageBackgroundWidget,
             headerBuilder: widget.detailImageHeaderBuilder,
             footerBuilder: widget.detailImageFooterBuilder,
+            pageGap: widget.detailImagePageGap,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

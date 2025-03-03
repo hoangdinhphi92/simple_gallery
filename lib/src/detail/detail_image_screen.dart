@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src/detail/data/hero_data.dart';
 import 'package:simple_gallery/src/detail/zoomable_image_widget.dart';
+import 'package:simple_gallery/src/utils/build_context_extension.dart';
 
 typedef DetailImageHeaderBuidler = Widget Function(BuildContext context);
 typedef DetailImageFooterBuidler = Widget Function(BuildContext context);
@@ -21,9 +22,9 @@ class DetailImageScreen extends StatefulWidget {
     required this.initialImageIndex,
     required this.initialImageRatio,
     required this.screenWidth,
+    this.pageGap = 16,
     this.headerBuilder,
     this.footerBuilder,
-    this.pageGap = 16,
     this.backgroundWidget,
   });
 
@@ -49,13 +50,7 @@ class _DetailImageScreenState extends State<DetailImageScreen> {
       children: [
         Positioned.fill(child: _buildBackground()),
         Positioned.fill(child: _buildPageView()),
-        if (widget.headerBuilder != null)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: widget.headerBuilder!.call(context),
-          ),
+        Positioned(top: 0, left: 0, right: 0, child: _buildHeader(context)),
         if (widget.footerBuilder != null)
           Positioned(
             bottom: 0,
@@ -98,5 +93,31 @@ class _DetailImageScreenState extends State<DetailImageScreen> {
 
   Widget _buildBackground() {
     return widget.backgroundWidget ?? ColoredBox(color: Colors.white);
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    if (widget.headerBuilder != null) {
+      return widget.headerBuilder!.call(context);
+    }
+
+    return _buildBackButton(context);
+  }
+
+  Widget _buildBackButton(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: context.viewPadding.top),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: SizedBox(
+          height: 48,
+          child: IconButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            icon: Icon(Icons.arrow_back),
+          ),
+        ),
+      ),
+    );
   }
 }
