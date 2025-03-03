@@ -4,9 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:simple_gallery/simple_gallery.dart';
 import 'package:simple_gallery/src/utils/build_context_extension.dart';
 
-typedef DetailImageScreenBuilder =
-    DetailImageScreen Function(BuildContext context);
-
 class SimpleGalleryScreen extends StatefulWidget {
   /// List of image file paths to be displayed in the gallery.
   final List<String> imagePaths;
