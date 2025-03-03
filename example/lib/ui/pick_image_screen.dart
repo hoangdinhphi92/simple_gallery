@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:simple_gallery/simple_gallery.dart';
+import 'package:simple_gallery_example/utils/build_context_extension.dart';
 
 const kGridItemPadding = 4.0;
 const kCrossAxisCount = 3;
@@ -30,18 +31,22 @@ class _PickImageScreenState extends State<PickImageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: SimpleGalleryScreen(
-                imagePaths: imageFiles,
-                padding: EdgeInsets.symmetric(horizontal: 4),
+      body: Column(
+        children: [
+          SizedBox(height: context.viewPadding.top),
+          _buildHeader(),
+          Expanded(
+            child: SimpleGalleryScreen(
+              imagePaths: imageFiles,
+              crossAxisCount: 1,
+              padding: EdgeInsets.only(
+                left: 4,
+                right: 4,
+                bottom: context.viewPadding.bottom,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
