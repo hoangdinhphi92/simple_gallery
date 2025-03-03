@@ -38,7 +38,6 @@ class _PickImageScreenState extends State<PickImageScreen> {
           Expanded(
             child: SimpleGalleryScreen(
               imagePaths: imageFiles,
-              crossAxisCount: 1,
               padding: EdgeInsets.only(
                 left: 4,
                 right: 4,
