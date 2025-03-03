@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:simple_gallery/src/detail/data/hero_data.dart';
 import 'package:simple_gallery/src/detail/zoomable_image_widget.dart';
 
+typedef DetailImageHeaderBuidler = Widget Function(BuildContext context);
+typedef DetailImageFooterBuidler = Widget Function(BuildContext context);
+
 class DetailImageScreen extends StatefulWidget {
   final List<String> imagePaths;
   final int initialImageIndex;
   final double initialImageRatio;
-  final Widget? header;
-  final Widget? footer;
+  final DetailImageHeaderBuidler? headerBuilder;
+  final DetailImageFooterBuidler? footerBuilder;
   final double pageGap;
   final double screenWidth;
+  final Widget? backgroundWidget;
 
   const DetailImageScreen({
     super.key,
@@ -17,9 +21,10 @@ class DetailImageScreen extends StatefulWidget {
     required this.initialImageIndex,
     required this.initialImageRatio,
     required this.screenWidth,
-    this.header,
-    this.footer,
+    this.headerBuilder,
+    this.footerBuilder,
     this.pageGap = 16,
+    this.backgroundWidget,
   });
 
   @override
@@ -42,11 +47,22 @@ class _DetailImageScreenState extends State<DetailImageScreen> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        Positioned.fill(child: _buildBackground()),
         Positioned.fill(child: _buildPageView()),
-        if (widget.header != null)
-          Positioned(top: 0, left: 0, right: 0, child: widget.header!),
-        if (widget.footer != null)
-          Positioned(bottom: 0, left: 0, right: 0, child: widget.footer!),
+        if (widget.headerBuilder != null)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: widget.headerBuilder!.call(context),
+          ),
+        if (widget.footerBuilder != null)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: widget.footerBuilder!.call(context),
+          ),
       ],
     );
   }
@@ -78,5 +94,9 @@ class _DetailImageScreenState extends State<DetailImageScreen> {
         );
       },
     );
+  }
+
+  Widget _buildBackground() {
+    return widget.backgroundWidget ?? ColoredBox(color: Colors.white);
   }
 }

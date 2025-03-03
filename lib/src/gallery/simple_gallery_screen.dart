@@ -12,6 +12,9 @@ class SimpleGalleryScreen extends StatefulWidget {
   final double childAspectRatio;
   final EdgeInsets padding;
   final Widget? backgroundWidget;
+  final Widget? detailImageBackgroundWidget;
+  final DetailImageHeaderBuidler? detailImageHeaderBuilder;
+  final DetailImageFooterBuidler? detailImageFooterBuilder;
 
   const SimpleGalleryScreen({
     super.key,
@@ -22,6 +25,9 @@ class SimpleGalleryScreen extends StatefulWidget {
     this.childAspectRatio = 1.0,
     this.padding = EdgeInsets.zero,
     this.backgroundWidget,
+    this.detailImageBackgroundWidget,
+    this.detailImageHeaderBuilder,
+    this.detailImageFooterBuilder,
   });
 
   @override
@@ -125,6 +131,9 @@ class _SimpleGalleryScreenState extends State<SimpleGalleryScreen> {
             initialImageIndex: index,
             initialImageRatio: _imageRatioMap[imagePath] ?? 1.0,
             screenWidth: screenWidth,
+            backgroundWidget: widget.detailImageBackgroundWidget,
+            headerBuilder: widget.detailImageHeaderBuilder,
+            footerBuilder: widget.detailImageFooterBuilder,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
