@@ -201,37 +201,37 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
   }
 
-void _constrainPosition() {
-  final scaledWidth = value.childSize.width * value.scale;
-  final scaledHeight = value.childSize.height * value.scale;
+  void _constrainPosition() {
+    final scaledWidth = value.childSize.width * value.scale;
+    final scaledHeight = value.childSize.height * value.scale;
 
-  double newX, newY;
+    double newX, newY;
 
-  // Handle x-axis
-  if (scaledWidth <= value.viewSize.width) {
-    // Center if it fits
-    newX = (value.viewSize.width - scaledWidth) / 2;
-  } else {
-    // Constrain if it exceeds
-    final minX = value.viewSize.width - scaledWidth; // Negative when larger
-    final maxX = 0.0;
-    newX = value.position.dx.clamp(minX, maxX); // minX < maxX
+    // Handle x-axis
+    if (scaledWidth <= value.viewSize.width) {
+      // Center if it fits
+      newX = (value.viewSize.width - scaledWidth) / 2;
+    } else {
+      // Constrain if it exceeds
+      final minX = value.viewSize.width - scaledWidth; // Negative when larger
+      final maxX = 0.0;
+      newX = value.position.dx.clamp(minX, maxX); // minX < maxX
+    }
+
+    // Handle y-axis
+    if (scaledHeight <= value.viewSize.height) {
+      // Center if it fits
+      newY = (value.viewSize.height - scaledHeight) / 2;
+    } else {
+      // Constrain if it exceeds
+      final minY = value.viewSize.height - scaledHeight; // Negative when larger
+      final maxY = 0.0;
+      newY = value.position.dy.clamp(minY, maxY); // minY < maxY
+    }
+
+    // Update position
+    value = value.copyWith(position: Offset(newX, newY));
   }
-
-  // Handle y-axis
-  if (scaledHeight <= value.viewSize.height) {
-    // Center if it fits
-    newY = (value.viewSize.height - scaledHeight) / 2;
-  } else {
-    // Constrain if it exceeds
-    final minY = value.viewSize.height - scaledHeight; // Negative when larger
-    final maxY = 0.0;
-    newY = value.position.dy.clamp(minY, maxY); // minY < maxY
-  }
-
-  // Update position
-  value = value.copyWith(position: Offset(newX, newY));
-}
 
   // Handle moving/panning logic
   void _handleMoving(Offset currentPosition) {
