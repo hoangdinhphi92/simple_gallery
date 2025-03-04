@@ -1,7 +1,12 @@
+import 'dart:io';
+import 'dart:ui' as ui show Codec, FrameInfo, Image, ImmutableBuffer;
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:simple_gallery/simple_gallery.dart';
+import 'package:simple_gallery/src2/detail/detail_decoration.dart';
 import 'package:simple_gallery_example/utils/build_context_extension.dart';
+import 'package:simple_gallery_example/utils/image_utils.dart';
 
 const kGridItemPadding = 4.0;
 const kCrossAxisCount = 3;
@@ -36,12 +41,20 @@ class _PickImageScreenState extends State<PickImageScreen> {
           SizedBox(height: context.viewPadding.top),
           _buildHeader(),
           Expanded(
-            child: SimpleGalleryScreen(
-              imagePaths: imageFiles,
-              padding: EdgeInsets.only(
-                left: 4,
-                right: 4,
-                bottom: context.viewPadding.bottom,
+            child: SimpleGallery<String>(
+              items: imageFiles,
+              itemSize: (item) => getImageSize(item),
+              itemBuilder: (context, item, itemSize, viewSize) {
+                return Image.file(
+                  File(item),
+                  cacheWidth: viewSize.width.round(),
+                  fit: BoxFit.cover,
+                );
+              },
+              detailDecoration: DetailDecoration(
+                detailBuilder: (context, item, itemSize, viewSize) {
+                  return Image.file(File(item), fit: BoxFit.contain);
+                },
               ),
             ),
           ),
