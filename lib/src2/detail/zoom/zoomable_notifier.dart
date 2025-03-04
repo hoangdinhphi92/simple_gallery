@@ -1,6 +1,4 @@
-import 'dart:ui';
-
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 enum ZoomableState { idle, zooming, moving }
 
@@ -26,11 +24,14 @@ class ZoomableValue {
 
     // Calculate the new scale to maintain the aspect ratio
     double newScale;
-    if (viewSize.width / viewSize.height > aspectRatio) {
+    if (viewSize.aspectRatio > aspectRatio) {
       newScale = viewSize.height / childSize.height;
     } else {
       newScale = viewSize.width / childSize.width;
     }
+
+    ZoomableNotifier.minScale = newScale;
+    ZoomableNotifier.maxScale = newScale * 5;
 
     // Adjust the position to keep the child centered
     Offset newPosition = Offset(
@@ -74,8 +75,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     : super(ZoomableValue.from(viewSize, childSize));
 
   // Constants for zooming and panning
-  static const double minScale = 0.8;
-  static const double maxScale = 5.0;
+  static double minScale = 1.0;
+  static double maxScale = 5.0;
 
   // Track active pointers for gesture detection
   final Map<int, Offset> _activePointers = {};
@@ -161,7 +162,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   Offset _calculateFocalPoint() {
     if (_activePointers.isEmpty) return Offset.zero;
 
-    final pointers = _activePointers.values.toList();
+    final pointers = _activePointers.values;
     double x = 0.0, y = 0.0;
 
     for (var pointer in pointers) {
@@ -178,50 +179,92 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     final focalPoint = _calculateFocalPoint();
 
     if (_initialScaleDistance != null && _initialScaleDistance! > 0) {
-      // Calculate new scale based on the change in distance
+      // Calculate new scale based on pointer distance change
       final scaleFactor = currentDistance / _initialScaleDistance!;
-      final newScale = value.scale * scaleFactor;
+      final newScale = (value.scale * scaleFactor).clamp(minScale, maxScale);
 
-      // Constrain scale within bounds
-      final constrainedScale = newScale.clamp(minScale, maxScale);
+      // Convert focal point to widget coordinates before scaling
+      final widgetFocalPoint = (focalPoint - value.position) / value.scale;
 
-      // Calculate the position adjustment to zoom toward the focal point
-      final viewCenter = Offset(
-        value.viewSize.width / 2,
-        value.viewSize.height / 2,
-      );
-      final focalPointOffset = focalPoint - viewCenter;
-      final scaleDiff = constrainedScale / value.scale;
+      // Calculate new position to maintain focal point screen position
+      final newPosition = focalPoint - widgetFocalPoint * newScale;
 
-      final newPosition = Offset(
-        value.position.dx - focalPointOffset.dx * (scaleDiff - 1),
-        value.position.dy - focalPointOffset.dy * (scaleDiff - 1),
-      );
+      // Update value with new scale and position
+      value = value.copyWith(scale: newScale, position: newPosition);
 
-      // Update the value
-      value = value.copyWith(scale: constrainedScale, position: newPosition);
+      // Ensure widget stays within view boundaries and centers when fitting
+      _constrainPosition();
 
-      // Reset the initial distance for the next move
+      // Update tracking variables for next iteration
       _initialScaleDistance = currentDistance;
       _lastFocalPoint = focalPoint;
     }
   }
 
-  // Handle moving/panning logic
-  void _handleMoving(Offset currentPosition) {
-    if (_lastFocalPoint != null) {
-      // Calculate the movement delta
-      final delta = currentPosition - _lastFocalPoint!;
-      final newPosition = value.position.translate(delta.dx, delta.dy);
+void _constrainPosition() {
+  final scaledWidth = value.childSize.width * value.scale;
+  final scaledHeight = value.childSize.height * value.scale;
 
-      // Update the position
-      value = value.copyWith(position: newPosition);
-      _lastFocalPoint = currentPosition;
-    }
+  double newX, newY;
+
+  // Handle x-axis
+  if (scaledWidth <= value.viewSize.width) {
+    // Center if it fits
+    newX = (value.viewSize.width - scaledWidth) / 2;
+  } else {
+    // Constrain if it exceeds
+    final minX = value.viewSize.width - scaledWidth; // Negative when larger
+    final maxX = 0.0;
+    newX = value.position.dx.clamp(minX, maxX); // minX < maxX
   }
 
-  // Utility method to reset the view to fit the content
-  void resetView() {
-    value = ZoomableValue.from(value.viewSize, value.childSize);
+  // Handle y-axis
+  if (scaledHeight <= value.viewSize.height) {
+    // Center if it fits
+    newY = (value.viewSize.height - scaledHeight) / 2;
+  } else {
+    // Constrain if it exceeds
+    final minY = value.viewSize.height - scaledHeight; // Negative when larger
+    final maxY = 0.0;
+    newY = value.position.dy.clamp(minY, maxY); // minY < maxY
+  }
+
+  // Update position
+  value = value.copyWith(position: Offset(newX, newY));
+}
+
+  // Handle moving/panning logic
+  void _handleMoving(Offset currentPosition) {
+    if (_lastFocalPoint == null) return;
+
+    // Calculate scaled dimensions once
+    final scaledWidth = value.childSize.width * value.scale;
+    final scaledHeight = value.childSize.height * value.scale;
+    final delta = currentPosition - _lastFocalPoint!; // Compute delta once
+
+    // Handle x-axis movement if widget width exceeds view width
+    double newX = value.position.dx;
+    if (scaledWidth > value.viewSize.width) {
+      newX = (value.position.dx + delta.dx).clamp(
+        -(scaledWidth -
+            value.viewSize.width), // Minimum x (left edge constraint)
+        0.0, // Maximum x (right edge constraint)
+      );
+    }
+
+    // Handle y-axis movement if widget height exceeds view height
+    double newY = value.position.dy;
+    if (scaledHeight > value.viewSize.height) {
+      newY = value.position.dy + delta.dy;
+      newY = newY.clamp(-(scaledHeight - value.viewSize.height), 0.0);
+    }
+
+    // Update position if there's a change
+    if (newX != value.position.dx || newY != value.position.dy) {
+      value = value.copyWith(position: Offset(newX, newY));
+    }
+
+    // Update last focal point
+    _lastFocalPoint = currentPosition;
   }
 }
