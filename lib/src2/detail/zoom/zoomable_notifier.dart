@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
-enum ZoomableState { idle, zooming, moving }
+const kAnimationDuration = Duration(milliseconds: 150);
+
+enum ZoomableState { idle, zooming, moving, animating }
 
 class ZoomableValue {
   final Size viewSize;
@@ -10,11 +13,18 @@ class ZoomableValue {
   final double scale;
   final Offset position;
 
+  final double minScale;
+  final double maxScale;
+  final double initScale;
+
   const ZoomableValue({
     required this.viewSize,
     required this.childSize,
     this.state = ZoomableState.idle,
     this.scale = 1.0,
+    this.minScale = 1.0,
+    this.maxScale = 5.0,
+    this.initScale = 1.0,
     this.position = Offset.zero,
   });
 
@@ -30,10 +40,6 @@ class ZoomableValue {
       newScale = viewSize.width / childSize.width;
     }
 
-    ZoomableNotifier.minScale = newScale * 0.5;
-    ZoomableNotifier.maxScale = newScale * 5;
-    ZoomableNotifier.initScale = newScale;
-
     // Adjust the position to keep the child centered
     Offset newPosition = Offset(
       (viewSize.width - childSize.width * newScale) / 2,
@@ -46,6 +52,9 @@ class ZoomableValue {
       childSize: childSize,
       position: newPosition,
       scale: newScale,
+      initScale: newScale,
+      minScale: newScale * 0.5,
+      maxScale: newScale * 5,
     );
   }
 
@@ -55,6 +64,9 @@ class ZoomableValue {
     ZoomableState? state,
     double? scale,
     Offset? position,
+    double? minScale,
+    double? maxScale,
+    double? initScale,
   }) {
     return ZoomableValue(
       viewSize: viewSize ?? this.viewSize,
@@ -62,23 +74,25 @@ class ZoomableValue {
       state: state ?? this.state,
       scale: scale ?? this.scale,
       position: position ?? this.position,
+      minScale: minScale ?? this.minScale,
+      maxScale: maxScale ?? this.maxScale,
+      initScale: initScale ?? this.initScale,
     );
   }
 
   @override
   String toString() {
-    return 'ZoomableValue{viewSize: $viewSize, childSize: $childSize, state: $state, scale: $scale, position: $position}';
+    return 'ZoomableValue{viewSize: $viewSize, childSize: $childSize, state: $state, scale: $scale, position: $position, minScale: $minScale, maxScale: $maxScale, initScale: $initScale}';
   }
 }
 
 class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
+  AnimationController? _animationController;
+
   ZoomableNotifier({required Size childSize, required Size viewSize})
     : super(ZoomableValue.from(viewSize, childSize));
 
   // Constants for zooming and panning
-  static double minScale = 1.0;
-  static double maxScale = 5.0;
-  static double initScale = 1.0;
 
   // Track active pointers for gesture detection
   final Map<int, Offset> _activePointers = {};
@@ -91,12 +105,15 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
     // If we have exactly 2 pointers, we'll start zooming
     if (_activePointers.length == 2) {
+      _disposeAnimation();
+
       value = value.copyWith(state: ZoomableState.zooming);
       _initialScaleDistance = _getPointersDistance();
       _lastFocalPoint = _calculateFocalPoint();
     }
     // If we have exactly 1 pointer, we'll start moving
-    else if (_activePointers.length == 1) {
+    else if (_activePointers.length == 1 &&
+        value.state != ZoomableState.animating) {
       value = value.copyWith(state: ZoomableState.moving);
       _lastFocalPoint = event.position;
     }
@@ -122,15 +139,22 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
         }
         break;
 
-      case ZoomableState.idle:
-        // Do nothing if we're idle
+      default:
         break;
     }
   }
 
-  void onPointerUp(PointerUpEvent event) {
+  void onPointerUp(PointerUpEvent event) async {
     _activePointers.remove(event.pointer);
+    _onPointerUp();
+  }
 
+  void onPointerCancel(PointerCancelEvent event) {
+    _activePointers.remove(event.pointer);
+    _onPointerUp();
+  }
+
+  void _onPointerUp() async {
     // Reset to idle state if no pointers are active
     if (_activePointers.isEmpty) {
       _onReleaseFinger();
@@ -138,8 +162,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     // If we still have pointers, adjust the state accordingly
     else if (_activePointers.length == 1) {
       if (value.state == ZoomableState.zooming) {
-        //todo: update animation
-        _constrainZooming();
+        await _validatePositionAndScale();
       }
       value = value.copyWith(state: ZoomableState.moving);
       _initialScaleDistance = null;
@@ -147,24 +170,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
   }
 
-  void onPointerCancel(PointerCancelEvent event) {
-    _activePointers.remove(event.pointer);
+  void _onReleaseFinger() async {
+    await _validatePositionAndScale();
 
-    // Reset to idle state if no pointers are active
-    if (_activePointers.isEmpty) {
-      _onReleaseFinger();
-    }
-  }
-
-  void _onReleaseFinger() {
-    //todo: update animation
-    value = value.copyWith(
-      state: ZoomableState.idle,
-      scale: value.scale < initScale ? initScale : value.scale,
-    );
-    _constrainZooming();
-    _constrainMoving();
-
+    value = value.copyWith(state: ZoomableState.idle);
     _initialScaleDistance = null;
     _lastFocalPoint = null;
   }
@@ -200,7 +209,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     if (_initialScaleDistance != null && _initialScaleDistance! > 0) {
       // Calculate new scale based on pointer distance change
       final scaleFactor = currentDistance / _initialScaleDistance!;
-      final newScale = (value.scale * scaleFactor).clamp(minScale, maxScale);
+      final newScale = (value.scale * scaleFactor).clamp(
+        value.minScale,
+        value.maxScale,
+      );
 
       // Convert focal point to widget coordinates before scaling
       final widgetFocalPoint = (focalPoint - value.position) / value.scale;
@@ -218,9 +230,29 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
   }
 
-  void _constrainZooming() {
-    final scaledWidth = value.childSize.width * value.scale;
-    final scaledHeight = value.childSize.height * value.scale;
+  // Handle moving/panning logic
+  void _handleMoving(Offset currentPosition, {bool zooming = false}) {
+    if (_lastFocalPoint == null) return;
+
+    final delta = currentPosition - _lastFocalPoint!; // Compute delta once
+
+    // Update the position
+    if (!zooming) {
+      _constrainMoving(delta: delta);
+    } else {
+      final newPosition = value.position.translate(delta.dx, delta.dy);
+      value = value.copyWith(position: newPosition);
+    }
+
+    // Update last focal point
+    _lastFocalPoint = currentPosition;
+  }
+
+  Future<dynamic> _validatePositionAndScale() async {
+    final newScale = value.scale.clamp(value.initScale, value.maxScale);
+
+    final scaledWidth = value.childSize.width * newScale;
+    final scaledHeight = value.childSize.height * newScale;
 
     double newX, newY;
 
@@ -247,25 +279,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
 
     // Update position
-    value = value.copyWith(position: Offset(newX, newY));
-  }
-
-  // Handle moving/panning logic
-  void _handleMoving(Offset currentPosition, {bool zooming = false}) {
-    if (_lastFocalPoint == null) return;
-
-    final delta = currentPosition - _lastFocalPoint!; // Compute delta once
-
-    // Update the position
-    if (!zooming) {
-      _constrainMoving(delta: delta);
-    } else {
-      final newPosition = value.position.translate(delta.dx, delta.dy);
-      value = value.copyWith(position: newPosition);
-    }
-
-    // Update last focal point
-    _lastFocalPoint = currentPosition;
+    // value = value.copyWith(scale: newScale, position: Offset(newX, newY));
+    return _animateToValue(newScale, Offset(newX, newY));
   }
 
   void _constrainMoving({Offset delta = Offset.zero}) {
@@ -293,5 +308,54 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     if (newX != value.position.dx || newY != value.position.dy) {
       value = value.copyWith(position: Offset(newX, newY));
     }
+  }
+
+  Future<void> _animateToValue(double newScale, Offset newPosition) async {
+    _disposeAnimation();
+
+    final controller = AnimationController(
+      duration: kAnimationDuration,
+      vsync: _ZoomableTickerProvider(),
+    );
+
+    _animationController = controller;
+    value = value.copyWith(state: ZoomableState.animating);
+
+    final valueTween = _ValueTween(
+      value,
+      value.copyWith(scale: newScale, position: newPosition),
+    );
+
+    _animationController?.addListener(() {
+      value = valueTween.evaluate(controller);
+    });
+
+    await controller.forward();
+    _disposeAnimation();
+  }
+
+  void _disposeAnimation() {
+    _animationController?.dispose();
+    _animationController = null;
+  }
+}
+
+class _ZoomableTickerProvider extends TickerProvider {
+  @override
+  Ticker createTicker(TickerCallback onTick) => Ticker(onTick);
+}
+
+class _ValueTween extends Animatable<ZoomableValue> {
+  _ValueTween(this.begin, this.end);
+
+  final ZoomableValue begin;
+  final ZoomableValue end;
+
+  @override
+  ZoomableValue transform(double t) {
+    return begin.copyWith(
+      scale: begin.scale + (end.scale - begin.scale) * t,
+      position: begin.position + (end.position - begin.position) * t,
+    );
   }
 }
