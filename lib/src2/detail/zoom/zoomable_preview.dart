@@ -30,6 +30,7 @@ class _ZoomablePreviewState extends State<ZoomablePreview> {
       valueListenable: _zoomableNotifier,
       builder:
           (context, value, child) => Listener(
+            behavior: HitTestBehavior.translucent,
             onPointerDown: _zoomableNotifier.onPointerDown,
             onPointerMove: _zoomableNotifier.onPointerMove,
             onPointerUp: _zoomableNotifier.onPointerUp,

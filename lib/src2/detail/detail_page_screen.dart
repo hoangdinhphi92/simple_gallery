@@ -112,6 +112,7 @@ class _DetailPageScreenState<T extends Object> extends State<DetailPageScreen<T>
         final controller = _getPageController(constraints);
 
         return PageView.builder(
+          physics: NeverScrollableScrollPhysics(),
           controller: controller,
           itemCount: widget.items.length,
           itemBuilder: (context, index) {
