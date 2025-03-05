@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src2/detail/detail_decoration.dart';
 import 'package:simple_gallery/src2/detail/detail_item_preview.dart';
@@ -117,6 +119,7 @@ class _DetailPageScreenState<T extends Object>
         return NotificationListener<ZoomableNotification>(
           onNotification: _onNotification,
           child: PageView.builder(
+            pageSnapping: false,
             physics: NeverScrollableScrollPhysics(),
             controller: controller,
             itemCount: widget.items.length,
@@ -154,14 +157,21 @@ class _DetailPageScreenState<T extends Object>
 
   bool _onNotification(ZoomableNotification notification) {
     final controller = _controller;
-    if(controller == null) return false;
+    if (controller == null) return false;
 
     switch (notification) {
       case OverscrollUpdateNotification():
-        controller.jumpTo(controller.position.pixels - notification.scrollDelta.dx);
+        controller.jumpTo(
+          controller.position.pixels - notification.scrollDelta.dx,
+        );
         break;
       case OverscrollEndNotification():
-        print("OverscrollEndNotification");
+        log("velocity: ${notification.velocity}");
+        controller.animateToPage(
+          controller.page!.round(),
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeOut,
+        );
         break;
       default:
         break;

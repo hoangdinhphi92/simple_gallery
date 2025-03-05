@@ -1,3 +1,7 @@
+import 'dart:developer';
+import 'dart:ui';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
@@ -127,8 +131,13 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
         value.state != ZoomableState.animating) {
       value = value.copyWith(state: ZoomableState.moving);
       _lastFocalPoint = event.position;
+      _velocityTracker.addPosition(event.timeStamp, event.position);
     }
   }
+
+  final VelocityTracker _velocityTracker = VelocityTracker.withKind(
+    PointerDeviceKind.touch,
+  );
 
   void onPointerMove(PointerMoveEvent event) {
     // Update the pointer position
@@ -147,6 +156,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       case ZoomableState.moving:
         if (_activePointers.length == 1 && _lastFocalPoint != null) {
           _handleMoving(event.position);
+          _velocityTracker.addPosition(event.timeStamp, event.position);
+          log(
+            "event.position: ${event.position} | timeStamp: ${event.timeStamp}",
+          );
         }
         break;
 
@@ -188,7 +201,9 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     _initialScaleDistance = null;
     _lastFocalPoint = null;
 
-    _sendOverScrollEndNotification();
+    _sendOverScrollEndNotification(
+      _velocityTracker.getVelocity().pixelsPerSecond.dx,
+    );
   }
 
   // Helper method to calculate distance between pointers
@@ -360,8 +375,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     OverscrollUpdateNotification(scrollDelta).dispatch(context);
   }
 
-  void _sendOverScrollEndNotification() {
-    OverscrollEndNotification().dispatch(context);
+  void _sendOverScrollEndNotification(double velocity) {
+    OverscrollEndNotification(velocity).dispatch(context);
   }
 
   void _sendStateUpdateNotification(ZoomableState state) {

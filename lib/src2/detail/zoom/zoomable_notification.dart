@@ -15,4 +15,8 @@ class OverscrollUpdateNotification extends ZoomableNotification {
   OverscrollUpdateNotification(this.scrollDelta);
 }
 
-class OverscrollEndNotification extends ZoomableNotification {}
+class OverscrollEndNotification extends ZoomableNotification {
+  final double velocity;
+
+  OverscrollEndNotification(this.velocity);
+}
