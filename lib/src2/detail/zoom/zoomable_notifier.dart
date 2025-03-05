@@ -30,8 +30,9 @@ class ZoomableValue {
       newScale = viewSize.width / childSize.width;
     }
 
-    ZoomableNotifier.minScale = newScale;
+    ZoomableNotifier.minScale = newScale * 0.5;
     ZoomableNotifier.maxScale = newScale * 5;
+    ZoomableNotifier.initScale = newScale;
 
     // Adjust the position to keep the child centered
     Offset newPosition = Offset(
@@ -77,6 +78,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   // Constants for zooming and panning
   static double minScale = 1.0;
   static double maxScale = 5.0;
+  static double initScale = 1.0;
 
   // Track active pointers for gesture detection
   final Map<int, Offset> _activePointers = {};
@@ -156,9 +158,13 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   void _onReleaseFinger() {
     //todo: update animation
+    value = value.copyWith(
+      state: ZoomableState.idle,
+      scale: value.scale < initScale ? initScale : value.scale,
+    );
     _constrainZooming();
     _constrainMoving();
-    value = value.copyWith(state: ZoomableState.idle);
+
     _initialScaleDistance = null;
     _lastFocalPoint = null;
   }
