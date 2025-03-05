@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
 
 const kAnimationDuration = Duration(milliseconds: 150);
 
@@ -87,12 +88,22 @@ class ZoomableValue {
 }
 
 class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
+  final BuildContext context;
   AnimationController? _animationController;
 
-  ZoomableNotifier({required Size childSize, required Size viewSize})
-    : super(ZoomableValue.from(viewSize, childSize));
+  ZoomableNotifier({
+    required this.context,
+    required Size childSize,
+    required Size viewSize,
+  }) : super(ZoomableValue.from(viewSize, childSize));
 
-  // Constants for zooming and panning
+  @override
+  set value(ZoomableValue newValue) {
+    if (super.value.state != newValue.state) {
+      _sendStateUpdateNotification(newValue.state);
+    }
+    super.value = newValue;
+  }
 
   // Track active pointers for gesture detection
   final Map<int, Offset> _activePointers = {};
@@ -176,6 +187,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     value = value.copyWith(state: ZoomableState.idle);
     _initialScaleDistance = null;
     _lastFocalPoint = null;
+
+    _sendOverScrollEndNotification();
   }
 
   // Helper method to calculate distance between pointers
@@ -307,9 +320,12 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     // Update position if there's a change
     if (newX != value.position.dx || newY != value.position.dy) {
       value = value.copyWith(position: Offset(newX, newY));
+    } else {
+      _sendOverScrollNotification(delta);
     }
   }
 
+  // Animation logic for zooming
   Future<void> _animateToValue(double newScale, Offset newPosition) async {
     _disposeAnimation();
 
@@ -337,6 +353,25 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   void _disposeAnimation() {
     _animationController?.dispose();
     _animationController = null;
+  }
+
+  // Send a notification to the parent widget
+  void _sendOverScrollNotification(Offset scrollDelta) {
+    OverscrollUpdateNotification(scrollDelta).dispatch(context);
+  }
+
+  void _sendOverScrollEndNotification() {
+    OverscrollEndNotification().dispatch(context);
+  }
+
+  void _sendStateUpdateNotification(ZoomableState state) {
+    ZoomStateUpdateNotification(state).dispatch(context);
+  }
+
+  @override
+  void dispose() {
+    _disposeAnimation();
+    super.dispose();
   }
 }
 

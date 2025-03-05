@@ -20,9 +20,16 @@ class ZoomablePreview extends StatefulWidget {
 
 class _ZoomablePreviewState extends State<ZoomablePreview> {
   late final ZoomableNotifier _zoomableNotifier = ZoomableNotifier(
+    context: context,
     viewSize: widget.viewSize,
     childSize: widget.childSize,
   );
+
+  @override
+  void dispose() {
+    _zoomableNotifier.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

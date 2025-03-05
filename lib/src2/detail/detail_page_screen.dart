@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src2/detail/detail_decoration.dart';
 import 'package:simple_gallery/src2/detail/detail_item_preview.dart';
+import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
 import 'package:simple_gallery/src2/gallery/simple_gallery.dart';
 
-typedef DetailActionBuilder<T extends Object> = Widget Function(BuildContext context, T item);
+typedef DetailActionBuilder<T extends Object> =
+    Widget Function(BuildContext context, T item);
 
 Future<dynamic> showDetailPage<T extends Object>({
   required BuildContext context,
@@ -77,7 +79,8 @@ class DetailPageScreen<T extends Object> extends StatefulWidget {
   State<DetailPageScreen<T>> createState() => _DetailPageScreenState<T>();
 }
 
-class _DetailPageScreenState<T extends Object> extends State<DetailPageScreen<T>> {
+class _DetailPageScreenState<T extends Object>
+    extends State<DetailPageScreen<T>> {
   PageController? _controller;
 
   PageController _getPageController(BoxConstraints constraints) {
@@ -111,23 +114,26 @@ class _DetailPageScreenState<T extends Object> extends State<DetailPageScreen<T>
       builder: (context, constraints) {
         final controller = _getPageController(constraints);
 
-        return PageView.builder(
-          physics: NeverScrollableScrollPhysics(),
-          controller: controller,
-          itemCount: widget.items.length,
-          itemBuilder: (context, index) {
-            final item = widget.items[index];
-            return FractionallySizedBox(
-              widthFactor: 1 / controller.viewportFraction,
-              child: DetailItemPreview(
-                item: item,
-                itemSize: widget.itemSize,
-                itemBuilder: widget.itemBuilder,
-                placeholderBuilder: widget.placeholderBuilder,
-                size: item == widget.curItem ? widget.currItemSize : null,
-              ),
-            );
-          },
+        return NotificationListener<ZoomableNotification>(
+          onNotification: _onNotification,
+          child: PageView.builder(
+            physics: NeverScrollableScrollPhysics(),
+            controller: controller,
+            itemCount: widget.items.length,
+            itemBuilder: (context, index) {
+              final item = widget.items[index];
+              return FractionallySizedBox(
+                widthFactor: 1 / controller.viewportFraction,
+                child: DetailItemPreview(
+                  item: item,
+                  itemSize: widget.itemSize,
+                  itemBuilder: widget.itemBuilder,
+                  placeholderBuilder: widget.placeholderBuilder,
+                  size: item == widget.curItem ? widget.currItemSize : null,
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -144,5 +150,23 @@ class _DetailPageScreenState<T extends Object> extends State<DetailPageScreen<T>
       },
       icon: Icon(Icons.arrow_back),
     );
+  }
+
+  bool _onNotification(ZoomableNotification notification) {
+    final controller = _controller;
+    if(controller == null) return false;
+
+    switch (notification) {
+      case OverscrollUpdateNotification():
+        controller.jumpTo(controller.position.pixels - notification.scrollDelta.dx);
+        break;
+      case OverscrollEndNotification():
+        print("OverscrollEndNotification");
+        break;
+      default:
+        break;
+    }
+
+    return true;
   }
 }
