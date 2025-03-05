@@ -84,6 +84,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   Offset? _lastFocalPoint;
 
   void onPointerDown(PointerDownEvent event) {
+    if (_activePointers.length == 2) return;
     _activePointers[event.pointer] = event.position;
 
     // If we have exactly 2 pointers, we'll start zooming
@@ -101,6 +102,9 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   void onPointerMove(PointerMoveEvent event) {
     // Update the pointer position
+    if (!_activePointers.containsKey(event.pointer)) {
+      return;
+    }
     _activePointers[event.pointer] = event.position;
 
     switch (value.state) {
@@ -127,12 +131,14 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
     // Reset to idle state if no pointers are active
     if (_activePointers.isEmpty) {
-      value = value.copyWith(state: ZoomableState.idle);
-      _initialScaleDistance = null;
-      _lastFocalPoint = null;
+      _onReleaseFinger();
     }
     // If we still have pointers, adjust the state accordingly
     else if (_activePointers.length == 1) {
+      if (value.state == ZoomableState.zooming) {
+        //todo: update animation
+        _constrainZooming();
+      }
       value = value.copyWith(state: ZoomableState.moving);
       _initialScaleDistance = null;
       _lastFocalPoint = _activePointers.values.first;
@@ -144,10 +150,17 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
     // Reset to idle state if no pointers are active
     if (_activePointers.isEmpty) {
-      value = value.copyWith(state: ZoomableState.idle);
-      _initialScaleDistance = null;
-      _lastFocalPoint = null;
+      _onReleaseFinger();
     }
+  }
+
+  void _onReleaseFinger() {
+    //todo: update animation
+    _constrainZooming();
+    _constrainMoving();
+    value = value.copyWith(state: ZoomableState.idle);
+    _initialScaleDistance = null;
+    _lastFocalPoint = null;
   }
 
   // Helper method to calculate distance between pointers
@@ -191,9 +204,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
       // Update value with new scale and position
       value = value.copyWith(scale: newScale, position: newPosition);
-
-      // Ensure widget stays within view boundaries and centers when fitting
-      _constrainPosition();
+      _handleMoving(focalPoint, zooming: true);
 
       // Update tracking variables for next iteration
       _initialScaleDistance = currentDistance;
@@ -201,7 +212,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
   }
 
-  void _constrainPosition() {
+  void _constrainZooming() {
     final scaledWidth = value.childSize.width * value.scale;
     final scaledHeight = value.childSize.height * value.scale;
 
@@ -234,14 +245,27 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   }
 
   // Handle moving/panning logic
-  void _handleMoving(Offset currentPosition) {
+  void _handleMoving(Offset currentPosition, {bool zooming = false}) {
     if (_lastFocalPoint == null) return;
 
+    final delta = currentPosition - _lastFocalPoint!; // Compute delta once
+
+    // Update the position
+    if (!zooming) {
+      _constrainMoving(delta: delta);
+    } else {
+      final newPosition = value.position.translate(delta.dx, delta.dy);
+      value = value.copyWith(position: newPosition);
+    }
+
+    // Update last focal point
+    _lastFocalPoint = currentPosition;
+  }
+
+  void _constrainMoving({Offset delta = Offset.zero}) {
     // Calculate scaled dimensions once
     final scaledWidth = value.childSize.width * value.scale;
     final scaledHeight = value.childSize.height * value.scale;
-    final delta = currentPosition - _lastFocalPoint!; // Compute delta once
-
     // Handle x-axis movement if widget width exceeds view width
     double newX = value.position.dx;
     if (scaledWidth > value.viewSize.width) {
@@ -263,8 +287,5 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     if (newX != value.position.dx || newY != value.position.dy) {
       value = value.copyWith(position: Offset(newX, newY));
     }
-
-    // Update last focal point
-    _lastFocalPoint = currentPosition;
   }
 }
