@@ -95,6 +95,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   final BuildContext context;
   AnimationController? _animationController;
 
+  final VelocityTracker _velocityTracker = VelocityTracker.withKind(
+    PointerDeviceKind.touch,
+  );
+
   ZoomableNotifier({
     required this.context,
     required Size childSize,
@@ -134,10 +138,6 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       _velocityTracker.addPosition(event.timeStamp, event.position);
     }
   }
-
-  final VelocityTracker _velocityTracker = VelocityTracker.withKind(
-    PointerDeviceKind.touch,
-  );
 
   void onPointerMove(PointerMoveEvent event) {
     // Update the pointer position
@@ -195,15 +195,15 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   }
 
   void _onReleaseFinger() async {
+    _sendOverScrollEndNotification(
+      _velocityTracker.getVelocity().pixelsPerSecond.dx,
+    );
+
     await _validatePositionAndScale();
 
     value = value.copyWith(state: ZoomableState.idle);
     _initialScaleDistance = null;
     _lastFocalPoint = null;
-
-    _sendOverScrollEndNotification(
-      _velocityTracker.getVelocity().pixelsPerSecond.dx,
-    );
   }
 
   // Helper method to calculate distance between pointers

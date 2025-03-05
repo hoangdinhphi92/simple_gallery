@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src2/detail/detail_decoration.dart';
 import 'package:simple_gallery/src2/detail/detail_item_preview.dart';
@@ -166,12 +164,24 @@ class _DetailPageScreenState<T extends Object>
         );
         break;
       case OverscrollEndNotification():
-        log("velocity: ${notification.velocity}");
-        controller.animateToPage(
-          controller.page!.round(),
-          duration: const Duration(milliseconds: 100),
-          curve: Curves.easeOut,
-        );
+        if (notification.velocity > 1000) {
+          controller.previousPage(
+            duration: const Duration(milliseconds: 100),
+            curve: Curves.easeOut,
+          );
+        } else if (notification.velocity < -1000) {
+          controller.nextPage(
+            duration: const Duration(milliseconds: 100),
+            curve: Curves.easeOut,
+          );
+        } else {
+          controller.animateToPage(
+            controller.page!.round(),
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+          );
+        }
+
         break;
       default:
         break;
