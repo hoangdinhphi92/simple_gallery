@@ -37,6 +37,9 @@ Future<dynamic> showDetailPage<T extends Object>({
   );
 }
 
+const _kNextPageDuration = Duration(milliseconds: 250);
+const _kTriggerSwipeVelocity = 200;
+
 class DetailPageScreen<T extends Object> extends StatefulWidget {
   final T? curItem;
   final Size? currItemSize;
@@ -166,26 +169,28 @@ class _DetailPageScreenState<T extends Object>
         break;
       case OverscrollEndNotification():
         final page = controller.page;
+        print("Page: $page");
 
         if (page == null || page == widget.items.length - 1 || page == 0) {
           return false;
         }
 
-        final isSwipe = notification.velocity.abs() > 1000;
+        print("velocity: ${notification.velocity}");
+        final isSwipe = notification.velocity.abs() > _kTriggerSwipeVelocity;
         final isSwipeNext = notification.velocity < 0;
 
         if (isSwipe) {
           final nextPage = page.toInt() + (isSwipeNext ? 1 : 0);
           controller.animateToPage(
             nextPage,
-            duration: const Duration(milliseconds: 150),
+            duration: _kNextPageDuration,
             curve: Curves.easeOut,
           );
         } else {
           final nextPage = page.round();
           controller.animateToPage(
             nextPage,
-            duration: const Duration(milliseconds: 150),
+            duration: _kNextPageDuration,
             curve: Curves.easeOut,
           );
         }

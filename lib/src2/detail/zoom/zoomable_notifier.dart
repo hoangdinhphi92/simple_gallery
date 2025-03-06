@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
 
-const kAnimationDuration = Duration(milliseconds: 150);
+const kValidateScaleAndPositionAnimationDuration = Duration(milliseconds: 150);
+const kMovingWithVelocityAnimationDuration = Duration(milliseconds: 500);
+const kOneSecondInMs = 1000;
 
 enum ZoomableState { idle, zooming, moving, animating, movingPage }
 
@@ -133,8 +135,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       _lastFocalPoint = _calculateFocalPoint();
     }
     // If we have exactly 1 pointer, we'll start moving
-    else if (_activePointers.length == 1 &&
-        value.state != ZoomableState.animating) {
+    else if (_activePointers.length ==
+        1 /* &&
+        value.state != ZoomableState.animating */ ) {
+      _disposeAnimation();
       value = value.copyWith(state: ZoomableState.moving);
       _lastFocalPoint = event.position;
       _velocityTracker.addPosition(event.timeStamp, event.position);
@@ -158,6 +162,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       case ZoomableState.moving:
         if (_activePointers.length == 1 && _lastFocalPoint != null) {
           _handleMoving(event.position);
+          _velocityTracker.addPosition(event.timeStamp, event.position);
         }
         break;
 
@@ -205,11 +210,13 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   }
 
   void _onReleaseFinger() async {
-    _sendOverScrollEndNotification(
-      _velocityTracker.getVelocity().pixelsPerSecond.dx,
-    );
+    final pixelsPerSecond = _velocityTracker.getVelocity().pixelsPerSecond;
 
-    await _validatePositionAndScale();
+    if (value.state == ZoomableState.movingPage) {
+      _sendOverScrollEndNotification(pixelsPerSecond.dx);
+    }
+
+    await _validatePositionAndScale(pixelsPerSecond: pixelsPerSecond / 3);
 
     value = value.copyWith(state: ZoomableState.idle);
     _initialScaleDistance = null;
@@ -286,7 +293,9 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     _lastFocalPoint = currentPosition;
   }
 
-  Future<dynamic> _validatePositionAndScale() async {
+  Future<dynamic> _validatePositionAndScale({
+    Offset pixelsPerSecond = Offset.zero,
+  }) async {
     final newScale = value.scale.clamp(value.initScale, value.maxScale);
 
     final scaledWidth = value.childSize.width * newScale;
@@ -300,9 +309,18 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       newX = (value.viewSize.width - scaledWidth) / 2;
     } else {
       // Constrain if it exceeds
+      var dx = value.position.dx;
+      if (pixelsPerSecond.dx.abs() > 50) {
+        dx =
+            dx +
+            (pixelsPerSecond.dx *
+                kMovingWithVelocityAnimationDuration.inMilliseconds /
+                kOneSecondInMs);
+      }
+
       final minX = value.viewSize.width - scaledWidth; // Negative when larger
       final maxX = 0.0;
-      newX = value.position.dx.clamp(minX, maxX); // minX < maxX
+      newX = dx.clamp(minX, maxX); // minX < maxX
     }
 
     // Handle y-axis
@@ -311,14 +329,32 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       newY = (value.viewSize.height - scaledHeight) / 2;
     } else {
       // Constrain if it exceeds
+
+      var dy = value.position.dy;
+      if (pixelsPerSecond.dy.abs() > 50) {
+        dy =
+            dy +
+            (pixelsPerSecond.dy *
+                kMovingWithVelocityAnimationDuration.inMilliseconds /
+                kOneSecondInMs);
+      }
+
       final minY = value.viewSize.height - scaledHeight; // Negative when larger
       final maxY = 0.0;
-      newY = value.position.dy.clamp(minY, maxY); // minY < maxY
+      newY = dy.clamp(minY, maxY); // minY < maxY
     }
 
     // Update position
     // value = value.copyWith(scale: newScale, position: Offset(newX, newY));
-    return _animateToValue(newScale, Offset(newX, newY));
+    print("state: ${value.state}");
+    return _animateToValue(
+      newScale,
+      Offset(newX, newY),
+      value.state == ZoomableState.animating ||
+              value.state == ZoomableState.zooming
+          ? kValidateScaleAndPositionAnimationDuration
+          : kMovingWithVelocityAnimationDuration,
+    );
   }
 
   void _constrainMoving({Offset delta = Offset.zero}) {
@@ -365,16 +401,25 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   }
 
   // Animation logic for zooming
-  Future<void> _animateToValue(double newScale, Offset newPosition) async {
+  Future<void> _animateToValue(
+    double newScale,
+    Offset newPosition,
+    Duration duration,
+  ) async {
     _disposeAnimation();
 
     final controller = AnimationController(
-      duration: kAnimationDuration,
+      duration: duration,
       vsync: _ZoomableTickerProvider(),
     );
 
     _animationController = controller;
     value = value.copyWith(state: ZoomableState.animating);
+
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: Curves.decelerate, // You can change this to any curve you prefer
+    );
 
     final valueTween = _ValueTween(
       value,
@@ -382,7 +427,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     );
 
     _animationController?.addListener(() {
-      value = valueTween.evaluate(controller);
+      value = valueTween.evaluate(animation);
     });
 
     await controller.forward();
