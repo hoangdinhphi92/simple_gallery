@@ -7,7 +7,7 @@ import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
 
 const kAnimationDuration = Duration(milliseconds: 150);
 
-enum ZoomableState { idle, zooming, moving, animating, pageMoving }
+enum ZoomableState { idle, zooming, moving, animating }
 
 class ZoomableValue {
   final Size viewSize;
