@@ -7,7 +7,7 @@ import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
 
 const kAnimationDuration = Duration(milliseconds: 150);
 
-enum ZoomableState { idle, zooming, moving, animating }
+enum ZoomableState { idle, zooming, moving, animating, movingPage }
 
 class ZoomableValue {
   final Size viewSize;
@@ -118,7 +118,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   Offset? _lastFocalPoint;
 
   void onPointerDown(PointerDownEvent event) {
-    if (_activePointers.length == 2) return;
+    if (_activePointers.length == 2 ||
+        value.state == ZoomableState.movingPage) {
+      return;
+    }
     _activePointers[event.pointer] = event.position;
 
     // If we have exactly 2 pointers, we'll start zooming
@@ -155,6 +158,12 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       case ZoomableState.moving:
         if (_activePointers.length == 1 && _lastFocalPoint != null) {
           _handleMoving(event.position);
+        }
+        break;
+
+      case ZoomableState.movingPage:
+        if (_activePointers.length == 1 && _lastFocalPoint != null) {
+          _movingPage(event.position);
           _velocityTracker.addPosition(event.timeStamp, event.position);
         }
         break;
@@ -184,6 +193,11 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       if (value.state == ZoomableState.zooming) {
         await _validatePositionAndScale();
       }
+
+      if (value.state == ZoomableState.movingPage) {
+        return;
+      }
+
       value = value.copyWith(state: ZoomableState.moving);
       _initialScaleDistance = null;
       _lastFocalPoint = _activePointers.values.first;
@@ -329,11 +343,25 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
 
     // Update position if there's a change
-    if (newX != value.position.dx || newY != value.position.dy) {
+    if (newX != value.position.dx ||
+        newY != value.position.dy ||
+        delta == Offset.zero) {
       value = value.copyWith(position: Offset(newX, newY));
     } else {
       _sendOverScrollNotification(delta);
+      value = value.copyWith(state: ZoomableState.movingPage);
     }
+  }
+
+  void _movingPage(Offset currentPosition) {
+    if (_lastFocalPoint == null) return;
+
+    final delta = currentPosition - _lastFocalPoint!; // Compute delta once
+
+    _sendOverScrollNotification(delta);
+
+    // Update last focal point
+    _lastFocalPoint = currentPosition;
   }
 
   // Animation logic for zooming

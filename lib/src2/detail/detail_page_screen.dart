@@ -167,7 +167,9 @@ class _DetailPageScreenState<T extends Object>
       case OverscrollEndNotification():
         final page = controller.page;
 
-        if (page == null) return false;
+        if (page == null || page == widget.items.length - 1 || page == 0) {
+          return false;
+        }
 
         final isSwipe = notification.velocity.abs() > 1000;
         final isSwipeNext = notification.velocity < 0;
