@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
@@ -8,7 +7,7 @@ import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
 
 const kAnimationDuration = Duration(milliseconds: 150);
 
-enum ZoomableState { idle, zooming, moving, animating }
+enum ZoomableState { idle, zooming, moving, animating, pageMoving }
 
 class ZoomableValue {
   final Size viewSize;
@@ -157,9 +156,6 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
         if (_activePointers.length == 1 && _lastFocalPoint != null) {
           _handleMoving(event.position);
           _velocityTracker.addPosition(event.timeStamp, event.position);
-          log(
-            "event.position: ${event.position} | timeStamp: ${event.timeStamp}",
-          );
         }
         break;
 

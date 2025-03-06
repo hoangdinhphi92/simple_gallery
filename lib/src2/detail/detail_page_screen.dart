@@ -162,21 +162,27 @@ class _DetailPageScreenState<T extends Object>
         controller.jumpTo(
           controller.position.pixels - notification.scrollDelta.dx,
         );
+
         break;
       case OverscrollEndNotification():
-        if (notification.velocity > 1000) {
-          controller.previousPage(
-            duration: const Duration(milliseconds: 100),
-            curve: Curves.easeOut,
-          );
-        } else if (notification.velocity < -1000) {
-          controller.nextPage(
-            duration: const Duration(milliseconds: 100),
+        final page = controller.page;
+
+        if (page == null) return false;
+
+        final isSwipe = notification.velocity.abs() > 1000;
+        final isSwipeNext = notification.velocity < 0;
+
+        if (isSwipe) {
+          final nextPage = page.toInt() + (isSwipeNext ? 1 : 0);
+          controller.animateToPage(
+            nextPage,
+            duration: const Duration(milliseconds: 150),
             curve: Curves.easeOut,
           );
         } else {
+          final nextPage = page.round();
           controller.animateToPage(
-            controller.page!.round(),
+            nextPage,
             duration: const Duration(milliseconds: 150),
             curve: Curves.easeOut,
           );
