@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:simple_gallery/src2/detail/detail_decoration.dart';
 import 'package:simple_gallery/src2/detail/detail_item_preview.dart';
 import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
+import 'package:simple_gallery/src2/detail/zoom/zoomable_notifier.dart';
 import 'package:simple_gallery/src2/gallery/simple_gallery.dart';
 
 typedef DetailActionBuilder<T extends Object> =
@@ -18,6 +19,7 @@ Future<dynamic> showDetailPage<T extends Object>({
 }) {
   return Navigator.of(context).push(
     PageRouteBuilder(
+      opaque: false,
       pageBuilder: (context, animation, secondaryAnimation) {
         return DetailPageScreen<T>(
           curItem: curItem,
@@ -36,6 +38,9 @@ Future<dynamic> showDetailPage<T extends Object>({
     ),
   );
 }
+
+const _kNextPageDuration = Duration(milliseconds: 250);
+const _kTriggerSwipeVelocity = 200;
 
 class DetailPageScreen<T extends Object> extends StatefulWidget {
   final T? curItem;
@@ -81,6 +86,17 @@ class DetailPageScreen<T extends Object> extends StatefulWidget {
 
 class _DetailPageScreenState<T extends Object>
     extends State<DetailPageScreen<T>> {
+  double _backgroundOpacity = 1;
+
+  double get backgroundOpacity => _backgroundOpacity;
+
+  set backgroundOpacity(double value) {
+    if (value != _backgroundOpacity && mounted) {
+      _backgroundOpacity = value;
+      setState(() {});
+    }
+  }
+
   PageController? _controller;
 
   PageController _getPageController(BoxConstraints constraints) {
@@ -117,6 +133,7 @@ class _DetailPageScreenState<T extends Object>
         return NotificationListener<ZoomableNotification>(
           onNotification: _onNotification,
           child: PageView.builder(
+            pageSnapping: false,
             physics: NeverScrollableScrollPhysics(),
             controller: controller,
             itemCount: widget.items.length,
@@ -140,7 +157,11 @@ class _DetailPageScreenState<T extends Object>
   }
 
   Widget _buildBackground() {
-    return widget.backgroundWidget ?? ColoredBox(color: Colors.white);
+    return AnimatedOpacity(
+      duration: kDragAnimationDuration,
+      opacity: _backgroundOpacity,
+      child: widget.backgroundWidget ?? ColoredBox(color: Colors.white),
+    );
   }
 
   Widget _buildBackButton(BuildContext context) {
@@ -154,14 +175,52 @@ class _DetailPageScreenState<T extends Object>
 
   bool _onNotification(ZoomableNotification notification) {
     final controller = _controller;
-    if(controller == null) return false;
+    if (controller == null) return false;
 
     switch (notification) {
       case OverscrollUpdateNotification():
-        controller.jumpTo(controller.position.pixels - notification.scrollDelta.dx);
+        controller.jumpTo(
+          controller.position.pixels - notification.scrollDelta.dx,
+        );
+
         break;
       case OverscrollEndNotification():
-        print("OverscrollEndNotification");
+        final page = controller.page;
+
+        if (page == null || page == widget.items.length - 1 || page == 0) {
+          return false;
+        }
+
+        final isSwipe = notification.velocity.abs() > _kTriggerSwipeVelocity;
+        final isSwipeNext = notification.velocity < 0;
+
+        if (isSwipe) {
+          final nextPage = page.toInt() + (isSwipeNext ? 1 : 0);
+          controller.animateToPage(
+            nextPage,
+            duration: _kNextPageDuration,
+            curve: Curves.decelerate,
+          );
+        } else {
+          final nextPage = page.round();
+          controller.animateToPage(
+            nextPage,
+            duration: _kNextPageDuration,
+            curve: Curves.decelerate,
+          );
+        }
+
+        break;
+      case DragUpdateNotification():
+        backgroundOpacity = 1 - notification.fraction;
+        break;
+      case DragEndNotification():
+        if (notification.popBack) {
+          backgroundOpacity = 0;
+          Navigator.of(context).pop();
+        } else {
+          backgroundOpacity = 1;
+        }
         break;
       default:
         break;

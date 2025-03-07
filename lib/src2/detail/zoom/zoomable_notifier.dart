@@ -1,10 +1,24 @@
+import 'dart:ui';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
 
-const kAnimationDuration = Duration(milliseconds: 150);
+const kZoomAnimationDuration = Duration(milliseconds: 150);
+const kFlingAnimationDuration = Duration(milliseconds: 500);
+const kDragAnimationDuration = Duration(milliseconds: 250);
+const kOneSecondInMs = 1000;
 
-enum ZoomableState { idle, zooming, moving, animating }
+enum ZoomableState {
+  idle,
+  zooming,
+  moving,
+  animating,
+  movingPage,
+  dragging,
+  fling,
+}
 
 class ZoomableValue {
   final Size viewSize;
@@ -91,6 +105,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   final BuildContext context;
   AnimationController? _animationController;
 
+  final VelocityTracker _velocityTracker = VelocityTracker.withKind(
+    PointerDeviceKind.touch,
+  );
+
   ZoomableNotifier({
     required this.context,
     required Size childSize,
@@ -109,9 +127,13 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   final Map<int, Offset> _activePointers = {};
   double? _initialScaleDistance;
   Offset? _lastFocalPoint;
+  Offset? _initialDragPosition;
 
   void onPointerDown(PointerDownEvent event) {
-    if (_activePointers.length == 2) return;
+    if (_activePointers.length == 2 ||
+        value.state == ZoomableState.movingPage) {
+      return;
+    }
     _activePointers[event.pointer] = event.position;
 
     // If we have exactly 2 pointers, we'll start zooming
@@ -125,8 +147,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     // If we have exactly 1 pointer, we'll start moving
     else if (_activePointers.length == 1 &&
         value.state != ZoomableState.animating) {
+      _disposeAnimation();
       value = value.copyWith(state: ZoomableState.moving);
       _lastFocalPoint = event.position;
+      _velocityTracker.addPosition(event.timeStamp, event.position);
     }
   }
 
@@ -137,6 +161,13 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
     _activePointers[event.pointer] = event.position;
 
+    final hasMovingPoint =
+        _activePointers.length == 1 && _lastFocalPoint != null;
+    if (hasMovingPoint) {
+      _velocityTracker.addPosition(event.timeStamp, event.position);
+    }
+
+    // Handle the event based on the current state
     switch (value.state) {
       case ZoomableState.zooming:
         if (_activePointers.length == 2 && _initialScaleDistance != null) {
@@ -145,11 +176,16 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
         break;
 
       case ZoomableState.moving:
-        if (_activePointers.length == 1 && _lastFocalPoint != null) {
-          _handleMoving(event.position);
-        }
+        if (hasMovingPoint) _handleMoving(event.position);
         break;
 
+      case ZoomableState.movingPage:
+        if (hasMovingPoint) _movingPage(event.position);
+        break;
+
+      case ZoomableState.dragging:
+        if (hasMovingPoint) _dragging(event.position);
+        break;
       default:
         break;
     }
@@ -175,6 +211,11 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       if (value.state == ZoomableState.zooming) {
         await _validatePositionAndScale();
       }
+
+      if (value.state == ZoomableState.movingPage) {
+        return;
+      }
+
       value = value.copyWith(state: ZoomableState.moving);
       _initialScaleDistance = null;
       _lastFocalPoint = _activePointers.values.first;
@@ -182,13 +223,30 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   }
 
   void _onReleaseFinger() async {
-    await _validatePositionAndScale();
+    final pixelsPerSecond = _velocityTracker.getVelocity().pixelsPerSecond;
+
+    if (value.state == ZoomableState.dragging) {
+      final fraction =
+          (value.position - _initialDragPosition!).distance /
+          (value.viewSize.shortestSide / 2);
+      if (fraction > 0.5) {
+        _sendDragEndNotification(true);
+      } else {
+        _sendDragEndNotification(false);
+        await _dragCancel();
+      }
+    } else if (value.state == ZoomableState.movingPage) {
+      _sendOverScrollEndNotification(pixelsPerSecond.dx);
+    } else if (pixelsPerSecond != Offset.zero) {
+      await _fling(pixelsPerSecond);
+    } else {
+      await _validatePositionAndScale();
+    }
 
     value = value.copyWith(state: ZoomableState.idle);
     _initialScaleDistance = null;
     _lastFocalPoint = null;
-
-    _sendOverScrollEndNotification();
+    _initialDragPosition = null;
   }
 
   // Helper method to calculate distance between pointers
@@ -261,7 +319,35 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     _lastFocalPoint = currentPosition;
   }
 
+  Future<void> _dragCancel() async {
+    final newPosition = _calcValidPosition();
+
+    return _animateToValue(
+      value.scale,
+      newPosition,
+      state: ZoomableState.animating,
+      duration: kDragAnimationDuration,
+    );
+  }
+
   Future<dynamic> _validatePositionAndScale() async {
+    final newScale = value.scale.clamp(value.initScale, value.maxScale);
+
+    final newPosition = _calcValidPosition();
+
+    // Update position
+    return _animateToValue(newScale, newPosition);
+  }
+
+  Future<void> _fling(Offset pixelsPerSecond) async {
+    final newPosition = _calcValidPosition(
+      pixelsPerSecond: pixelsPerSecond / 3,
+    );
+
+    return _animateFling(newPosition);
+  }
+
+  Offset _calcValidPosition({Offset pixelsPerSecond = Offset.zero}) {
     final newScale = value.scale.clamp(value.initScale, value.maxScale);
 
     final scaledWidth = value.childSize.width * newScale;
@@ -275,9 +361,18 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       newX = (value.viewSize.width - scaledWidth) / 2;
     } else {
       // Constrain if it exceeds
+      var dx = value.position.dx;
+      if (pixelsPerSecond.dx.abs() > kMinFlingVelocity) {
+        dx =
+            dx +
+            (pixelsPerSecond.dx *
+                kFlingAnimationDuration.inMilliseconds /
+                kOneSecondInMs);
+      }
+
       final minX = value.viewSize.width - scaledWidth; // Negative when larger
       final maxX = 0.0;
-      newX = value.position.dx.clamp(minX, maxX); // minX < maxX
+      newX = dx.clamp(minX, maxX); // minX < maxX
     }
 
     // Handle y-axis
@@ -286,14 +381,22 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       newY = (value.viewSize.height - scaledHeight) / 2;
     } else {
       // Constrain if it exceeds
+
+      var dy = value.position.dy;
+      if (pixelsPerSecond.dy.abs() > kMinFlingVelocity) {
+        dy =
+            dy +
+            (pixelsPerSecond.dy *
+                kFlingAnimationDuration.inMilliseconds /
+                kOneSecondInMs);
+      }
+
       final minY = value.viewSize.height - scaledHeight; // Negative when larger
       final maxY = 0.0;
-      newY = value.position.dy.clamp(minY, maxY); // minY < maxY
+      newY = dy.clamp(minY, maxY); // minY < maxY
     }
 
-    // Update position
-    // value = value.copyWith(scale: newScale, position: Offset(newX, newY));
-    return _animateToValue(newScale, Offset(newX, newY));
+    return Offset(newX, newY);
   }
 
   void _constrainMoving({Offset delta = Offset.zero}) {
@@ -318,32 +421,91 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
 
     // Update position if there's a change
-    if (newX != value.position.dx || newY != value.position.dy) {
-      value = value.copyWith(position: Offset(newX, newY));
-    } else {
+    final isDragging =
+        newY == value.position.dy && delta.dy.abs() > delta.dx.abs();
+
+    final isMovingPage =
+        (newX == value.position.dx &&
+            newY == value.position.dy &&
+            delta != Offset.zero) ||
+        (newX == value.position.dx && delta.dx.abs() > 8);
+
+    if (isDragging) {
+      _initialDragPosition = value.position;
+      value = value.copyWith(state: ZoomableState.dragging);
+    } else if (isMovingPage) {
       _sendOverScrollNotification(delta);
+      value = value.copyWith(state: ZoomableState.movingPage);
+    } else if (newX != value.position.dx || newY != value.position.dy) {
+      value = value.copyWith(position: Offset(newX, newY));
     }
   }
 
+  void _movingPage(Offset currentPosition) {
+    if (_lastFocalPoint == null) return;
+
+    final delta = currentPosition - _lastFocalPoint!; // Compute delta once
+
+    _sendOverScrollNotification(delta);
+
+    // Update last focal point
+    _lastFocalPoint = currentPosition;
+  }
+
+  void _dragging(Offset currentPosition) {
+    if (_lastFocalPoint == null || _initialDragPosition == null) return;
+
+    final delta = currentPosition - _lastFocalPoint!; // Compute delta once
+    final newPosition = value.position + delta;
+
+    value = value.copyWith(position: newPosition);
+
+    final distance = (newPosition - _initialDragPosition!).distance;
+    final fraction = distance / (value.viewSize.shortestSide / 2);
+    _sendDragUpdateNotification(fraction.clamp(0.0, 1.0));
+
+    // Update last focal point
+    _lastFocalPoint = currentPosition;
+  }
+
+  Future<void> _animateFling(Offset newPosition) {
+    return _animateToValue(
+      value.scale,
+      newPosition,
+      state: ZoomableState.fling,
+      duration: kFlingAnimationDuration,
+    );
+  }
+
   // Animation logic for zooming
-  Future<void> _animateToValue(double newScale, Offset newPosition) async {
+  Future<void> _animateToValue(
+    double newScale,
+    Offset newPosition, {
+    ZoomableState state = ZoomableState.animating,
+    Duration duration = kZoomAnimationDuration,
+  }) async {
     _disposeAnimation();
 
     final controller = AnimationController(
-      duration: kAnimationDuration,
+      duration: duration,
       vsync: _ZoomableTickerProvider(),
     );
 
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: Curves.decelerate,
+    );
+
     _animationController = controller;
-    value = value.copyWith(state: ZoomableState.animating);
+    value = value.copyWith(state: state);
 
     final valueTween = _ValueTween(
       value,
       value.copyWith(scale: newScale, position: newPosition),
     );
 
-    _animationController?.addListener(() {
-      value = valueTween.evaluate(controller);
+    controller.addListener(() {
+      value = valueTween.evaluate(animation);
     });
 
     await controller.forward();
@@ -360,12 +522,20 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     OverscrollUpdateNotification(scrollDelta).dispatch(context);
   }
 
-  void _sendOverScrollEndNotification() {
-    OverscrollEndNotification().dispatch(context);
+  void _sendOverScrollEndNotification(double velocity) {
+    OverscrollEndNotification(velocity).dispatch(context);
   }
 
   void _sendStateUpdateNotification(ZoomableState state) {
     ZoomStateUpdateNotification(state).dispatch(context);
+  }
+
+  void _sendDragUpdateNotification(double fraction) {
+    DragUpdateNotification(fraction).dispatch(context);
+  }
+
+  void _sendDragEndNotification(bool popBack) {
+    DragEndNotification(popBack).dispatch(context);
   }
 
   @override

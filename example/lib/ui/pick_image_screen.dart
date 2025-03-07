@@ -55,6 +55,7 @@ class _PickImageScreenState extends State<PickImageScreen> {
                 detailBuilder: (context, item, itemSize, viewSize) {
                   return Image.file(File(item), fit: BoxFit.contain);
                 },
+                pageGap: 16,
               ),
             ),
           ),
