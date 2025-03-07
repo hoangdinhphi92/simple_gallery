@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:simple_gallery/src2/detail/detail_decoration.dart';
-import 'package:simple_gallery/src2/detail/detail_page_screen.dart';
-import 'package:simple_gallery/src2/gallery/simple_item.dart';
+import 'package:simple_gallery/src/detail/detail_decoration.dart';
+import 'package:simple_gallery/src/detail/detail_page_screen.dart';
+import 'package:simple_gallery/src/gallery/simple_item.dart';
 
 /// ItemBuilder is a function that builds a widget for the given item.
 typedef PlaceholderBuilder<T extends Object> = Widget Function(BuildContext context, T item);

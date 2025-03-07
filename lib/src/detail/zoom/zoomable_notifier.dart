@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
+import 'package:simple_gallery/src/detail/zoom/zoomable_notification.dart';
 
 const kZoomAnimationDuration = Duration(milliseconds: 150);
 const kFlingAnimationDuration = Duration(milliseconds: 500);

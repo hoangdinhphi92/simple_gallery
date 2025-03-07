@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:simple_gallery/src2/detail/detail_decoration.dart';
-import 'package:simple_gallery/src2/detail/detail_item_preview.dart';
-import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
-import 'package:simple_gallery/src2/detail/zoom/zoomable_notifier.dart';
-import 'package:simple_gallery/src2/gallery/simple_gallery.dart';
+import 'package:simple_gallery/src/detail/detail_decoration.dart';
+import 'package:simple_gallery/src/detail/detail_item_preview.dart';
+import 'package:simple_gallery/src/detail/zoom/zoomable_notification.dart';
+import 'package:simple_gallery/src/detail/zoom/zoomable_notifier.dart';
+import 'package:simple_gallery/src/gallery/simple_gallery.dart';
 
 typedef DetailActionBuilder<T extends Object> =
     Widget Function(BuildContext context, T item);

@@ -1,29 +1,31 @@
-import 'package:flutter/material.dart';
-import 'package:simple_gallery/simple_gallery.dart';
-import 'package:simple_gallery/src2/detail/zoom/zoomable_preview.dart';
 
-class DetailItemPreview<T extends Object> extends StatefulWidget {
+import 'package:flutter/material.dart';
+import 'package:simple_gallery/src/gallery/simple_gallery.dart';
+
+typedef ItemTap<T extends Object> = void Function(BuildContext context, T item, Size itemSize);
+
+class SimpleItem<T extends Object> extends StatefulWidget {
   final T item;
-  final Size? size;
   final ItemSize<T> itemSize;
   final ItemBuilder<T> itemBuilder;
   final PlaceholderBuilder<T>? placeholderBuilder;
 
-  const DetailItemPreview({
+  final ItemTap<T>? onTap;
+
+  const SimpleItem({
     super.key,
     required this.item,
-    this.size,
     required this.itemSize,
     required this.itemBuilder,
     this.placeholderBuilder,
+    this.onTap,
   });
 
   @override
-  State<DetailItemPreview<T>> createState() => _DetailItemPreviewState<T>();
+  State<SimpleItem<T>> createState() => _SimpleItemState<T>();
 }
 
-class _DetailItemPreviewState<T extends Object>
-    extends State<DetailItemPreview<T>> {
+class _SimpleItemState<T extends Object> extends State<SimpleItem<T>> {
   Size? _itemSize;
 
   @override
@@ -33,11 +35,6 @@ class _DetailItemPreviewState<T extends Object>
   }
 
   void _loadItemSize() async {
-    if (widget.size != null) {
-      _itemSize = widget.size!;
-      return;
-    }
-
     _itemSize = await widget.itemSize(widget.item);
     if (mounted) {
       setState(() {});
@@ -55,12 +52,10 @@ class _DetailItemPreviewState<T extends Object>
 
     return LayoutBuilder(
       builder:
-          (context, constraints) => ZoomablePreview(
-            viewSize: constraints.biggest,
-            childSize: size,
+          (context, constraints) => GestureDetector(
+            onTap: () => widget.onTap?.call(context, widget.item, size),
             child: Hero(
               tag: widget.item,
-              flightShuttleBuilder: _buildFlightShuttle,
               child: widget.itemBuilder(
                 context,
                 widget.item,
@@ -70,18 +65,5 @@ class _DetailItemPreviewState<T extends Object>
             ),
           ),
     );
-  }
-
-  Widget _buildFlightShuttle(
-    BuildContext flightContext,
-    Animation<double> animation,
-    HeroFlightDirection flightDirection,
-    BuildContext fromHeroContext,
-    BuildContext toHeroContext,
-  ) {
-    if (flightDirection == HeroFlightDirection.push) {
-      return fromHeroContext.widget;
-    }
-    return toHeroContext.widget;
   }
 }

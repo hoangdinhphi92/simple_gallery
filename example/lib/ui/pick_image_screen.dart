@@ -4,7 +4,6 @@ import 'dart:ui' as ui show Codec, FrameInfo, Image, ImmutableBuffer;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:simple_gallery/simple_gallery.dart';
-import 'package:simple_gallery/src2/detail/detail_decoration.dart';
 import 'package:simple_gallery_example/utils/build_context_extension.dart';
 import 'package:simple_gallery_example/utils/image_utils.dart';
 

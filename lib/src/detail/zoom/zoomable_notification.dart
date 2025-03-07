@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:simple_gallery/src2/detail/zoom/zoomable_notifier.dart';
+import 'package:simple_gallery/src/detail/zoom/zoomable_notifier.dart';
 
 sealed class ZoomableNotification extends Notification {}
 
