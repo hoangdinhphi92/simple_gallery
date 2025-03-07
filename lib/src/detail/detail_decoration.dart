@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/simple_gallery.dart';
-
-typedef DetailActionBuilder<T extends Object> = Widget Function(BuildContext context, T item);
+import 'package:simple_gallery/src/detail/detail_page_screen.dart';
 
 class DetailDecoration<T extends Object> {
   final ItemBuilder<T> detailBuilder;

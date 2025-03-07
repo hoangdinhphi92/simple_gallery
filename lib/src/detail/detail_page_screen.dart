@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src/detail/detail_decoration.dart';
 import 'package:simple_gallery/src/detail/detail_item_preview.dart';
+import 'package:simple_gallery/src/detail/ui/detail_default_footer.dart';
+import 'package:simple_gallery/src/detail/ui/detail_default_header.dart';
 import 'package:simple_gallery/src/detail/zoom/zoomable_notification.dart';
 import 'package:simple_gallery/src/detail/zoom/zoomable_notifier.dart';
 import 'package:simple_gallery/src/gallery/simple_gallery.dart';
 
 typedef DetailActionBuilder<T extends Object> =
-    Widget Function(BuildContext context, T item);
+    Widget Function(
+      BuildContext context,
+      T item,
+      PageController pageController,
+    );
 
 Future<dynamic> showDetailPage<T extends Object>({
   required BuildContext context,
@@ -39,8 +45,8 @@ Future<dynamic> showDetailPage<T extends Object>({
   );
 }
 
-const _kNextPageDuration = Duration(milliseconds: 250);
-const _kTriggerSwipeVelocity = 200;
+const kNextPageDuration = Duration(milliseconds: 250);
+const kTriggerSwipeVelocity = 200;
 
 class DetailPageScreen<T extends Object> extends StatefulWidget {
   final T? curItem;
@@ -112,24 +118,29 @@ class _DetailPageScreenState<T extends Object>
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(child: _buildBackground()),
-        Positioned.fill(child: _buildPageView()),
-        Positioned(
-          left: 0,
-          top: MediaQuery.viewPaddingOf(context).top,
-          child: _buildBackButton(context),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPageView() {
     return LayoutBuilder(
       builder: (context, constraints) {
         final controller = _getPageController(constraints);
+        return Stack(
+          children: [
+            Positioned.fill(child: _buildBackground()),
+            Positioned.fill(child: _buildPageView(controller)),
+            Positioned(left: 0, top: 0, right: 0, child: _buildHeader(context)),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildFooter(context),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
+  Widget _buildPageView(PageController controller) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
         return NotificationListener<ZoomableNotification>(
           onNotification: _onNotification,
           child: PageView.builder(
@@ -164,12 +175,22 @@ class _DetailPageScreenState<T extends Object>
     );
   }
 
-  Widget _buildBackButton(BuildContext context) {
-    return IconButton(
-      onPressed: () {
-        Navigator.of(context).pop();
-      },
-      icon: Icon(Icons.arrow_back),
+  Widget _buildHeader(BuildContext context) {
+    if (widget.headerBuilder != null && _controller != null) {
+      return widget.headerBuilder!.call(context, widget.curItem!, _controller!);
+    }
+
+    return DetailDefaultHeader();
+  }
+
+  Widget _buildFooter(BuildContext context) {
+    if (widget.footerBuilder != null && _controller != null) {
+      return widget.footerBuilder!.call(context, widget.curItem!, _controller!);
+    }
+
+    return DetailDefaultFooter(
+      totalPage: widget.items.length,
+      pageController: _controller!,
     );
   }
 
@@ -191,21 +212,21 @@ class _DetailPageScreenState<T extends Object>
           return false;
         }
 
-        final isSwipe = notification.velocity.abs() > _kTriggerSwipeVelocity;
+        final isSwipe = notification.velocity.abs() > kTriggerSwipeVelocity;
         final isSwipeNext = notification.velocity < 0;
 
         if (isSwipe) {
           final nextPage = page.toInt() + (isSwipeNext ? 1 : 0);
           controller.animateToPage(
             nextPage,
-            duration: _kNextPageDuration,
+            duration: kNextPageDuration,
             curve: Curves.decelerate,
           );
         } else {
           final nextPage = page.round();
           controller.animateToPage(
             nextPage,
-            duration: _kNextPageDuration,
+            duration: kNextPageDuration,
             curve: Curves.decelerate,
           );
         }
