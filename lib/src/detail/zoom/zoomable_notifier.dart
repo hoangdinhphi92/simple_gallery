@@ -8,6 +8,8 @@ import 'package:simple_gallery/src/detail/zoom/zoomable_notification.dart';
 const kZoomAnimationDuration = Duration(milliseconds: 150);
 const kFlingAnimationDuration = Duration(milliseconds: 500);
 const kDragAnimationDuration = Duration(milliseconds: 250);
+const kDoubleTapDistance = 50;
+const kDoubleTapDurationInMs = 200;
 const kOneSecondInMs = 1000;
 
 enum ZoomableState {
@@ -18,6 +20,7 @@ enum ZoomableState {
   movingPage,
   dragging,
   fling,
+  doubleTap,
 }
 
 class ZoomableValue {
@@ -128,6 +131,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   double? _initialScaleDistance;
   Offset? _lastFocalPoint;
   Offset? _initialDragPosition;
+  PointerUpEvent? _lastTapEvent;
 
   void onPointerDown(PointerDownEvent event) {
     if (_activePointers.length == 2 ||
@@ -193,6 +197,21 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   void onPointerUp(PointerUpEvent event) async {
     _activePointers.remove(event.pointer);
+
+    // Detect double tap
+    final isDoubleTap =
+        _lastTapEvent != null &&
+        (_lastTapEvent!.position - event.position).distance <
+            kDoubleTapDistance &&
+        (event.timeStamp - _lastTapEvent!.timeStamp).inMilliseconds <
+            kDoubleTapDurationInMs;
+
+    if (isDoubleTap) {
+      value = value.copyWith(state: ZoomableState.doubleTap);
+    }
+
+    _lastTapEvent = event;
+
     _onPointerUp();
   }
 
@@ -224,8 +243,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   void _onReleaseFinger() async {
     final pixelsPerSecond = _velocityTracker.getVelocity().pixelsPerSecond;
-
-    if (value.state == ZoomableState.dragging) {
+    if (value.state == ZoomableState.doubleTap && _lastTapEvent != null) {
+      await _onDoubleTap(_lastTapEvent!.position);
+      _lastTapEvent = null;
+    } else if (value.state == ZoomableState.dragging) {
       final fraction =
           (value.position - _initialDragPosition!).distance /
           (value.viewSize.shortestSide / 2);
@@ -237,7 +258,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       }
     } else if (value.state == ZoomableState.movingPage) {
       _sendOverScrollEndNotification(pixelsPerSecond.dx);
-    } else if (pixelsPerSecond != Offset.zero) {
+    } else if (pixelsPerSecond != Offset.zero &&
+        value.scale > value.initScale) {
       await _fling(pixelsPerSecond);
     } else {
       await _validatePositionAndScale();
@@ -247,6 +269,82 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     _initialScaleDistance = null;
     _lastFocalPoint = null;
     _initialDragPosition = null;
+  }
+
+  Future<void> _onDoubleTap(Offset position) async {
+    final isZoomed = value.scale != value.initScale;
+
+    if (isZoomed) {
+      await _animateToValue(
+        value.initScale,
+        _calcValidPosition(scale: value.initScale),
+      );
+    } else {
+      // calc new scale value
+      var newScale = 0.0;
+      final scaledWidth = value.childSize.width * value.initScale;
+      final scaledHeight = value.childSize.height * value.initScale;
+
+      if (value.viewSize.aspectRatio > value.childSize.aspectRatio) {
+        // new scale to fit width
+        newScale = value.initScale * value.viewSize.width / scaledWidth;
+      } else if (value.viewSize.aspectRatio < value.childSize.aspectRatio) {
+        // new scale to fit height
+        newScale = value.initScale * value.viewSize.height / scaledHeight;
+      } else {
+        newScale = value.initScale * 2;
+      }
+
+      // calc new position
+      final screenCenter = Offset(
+        value.viewSize.width / 2,
+        value.viewSize.height / 2,
+      );
+
+      // Convert touch position to widget coordinates at initial scale
+      final widgetTouchPoint = (position - value.position) / value.scale;
+
+      // Calculate new position to center the touched point
+      var newPosition = screenCenter - widgetTouchPoint * newScale;
+
+      // Calculate scaled dimensions at new scale
+      final newScaledWidth = value.childSize.width * newScale;
+      final newScaledHeight = value.childSize.height * newScale;
+
+      // Constrain X position
+      double newX = newPosition.dx;
+      if (newScaledWidth > value.viewSize.width) {
+        newX = newX.clamp(
+          value.viewSize.width - newScaledWidth, // Left edge
+          0.0, // Right edge
+        );
+      } else {
+        newX = (value.viewSize.width - newScaledWidth) / 2; // Center if smaller
+      }
+
+      // Constrain Y position
+      double newY = newPosition.dy;
+      if (newScaledHeight > value.viewSize.height) {
+        newY = newY.clamp(
+          value.viewSize.height - newScaledHeight, // Top edge
+          0.0, // Bottom edge
+        );
+      } else {
+        newY =
+            (value.viewSize.height - newScaledHeight) / 2; // Center if smaller
+      }
+
+      // Create constrained position
+      newPosition = Offset(newX, newY);
+
+      // Animate to new scale and position
+      await _animateToValue(
+        newScale,
+        newPosition,
+        state: ZoomableState.animating,
+        duration: kZoomAnimationDuration,
+      );
+    }
   }
 
   // Helper method to calculate distance between pointers
@@ -347,8 +445,12 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     return _animateFling(newPosition);
   }
 
-  Offset _calcValidPosition({Offset pixelsPerSecond = Offset.zero}) {
-    final newScale = value.scale.clamp(value.initScale, value.maxScale);
+  Offset _calcValidPosition({
+    Offset pixelsPerSecond = Offset.zero,
+    double? scale,
+  }) {
+    final newScale =
+        scale ?? value.scale.clamp(value.initScale, value.maxScale);
 
     final scaledWidth = value.childSize.width * newScale;
     final scaledHeight = value.childSize.height * newScale;
@@ -422,7 +524,9 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
     // Update position if there's a change
     final isDragging =
-        newY == value.position.dy && delta.dy.abs() > delta.dx.abs();
+        newY == value.position.dy &&
+        delta.dy > 0 &&
+        delta.dy.abs() > delta.dx.abs();
 
     final isMovingPage =
         (newX == value.position.dx &&
