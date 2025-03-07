@@ -169,13 +169,11 @@ class _DetailPageScreenState<T extends Object>
         break;
       case OverscrollEndNotification():
         final page = controller.page;
-        print("Page: $page");
 
         if (page == null || page == widget.items.length - 1 || page == 0) {
           return false;
         }
 
-        print("velocity: ${notification.velocity}");
         final isSwipe = notification.velocity.abs() > _kTriggerSwipeVelocity;
         final isSwipeNext = notification.velocity < 0;
 
@@ -184,14 +182,14 @@ class _DetailPageScreenState<T extends Object>
           controller.animateToPage(
             nextPage,
             duration: _kNextPageDuration,
-            curve: Curves.easeOut,
+            curve: Curves.decelerate,
           );
         } else {
           final nextPage = page.round();
           controller.animateToPage(
             nextPage,
             duration: _kNextPageDuration,
-            curve: Curves.easeOut,
+            curve: Curves.decelerate,
           );
         }
 
