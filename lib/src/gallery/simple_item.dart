@@ -1,8 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src/gallery/simple_gallery.dart';
 
-typedef ItemTap<T extends Object> = void Function(BuildContext context, T item, Size itemSize);
+typedef ItemTap<T extends Object> =
+    void Function(BuildContext context, T item, Size itemSize);
 
 class SimpleItem<T extends Object> extends StatefulWidget {
   final T item;
@@ -32,6 +32,15 @@ class _SimpleItemState<T extends Object> extends State<SimpleItem<T>> {
   void initState() {
     _loadItemSize();
     super.initState();
+  }
+
+  @override
+  void didUpdateWidget(covariant SimpleItem<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.item != oldWidget.item) {
+      _itemSize = null;
+      _loadItemSize();
+    }
   }
 
   void _loadItemSize() async {
