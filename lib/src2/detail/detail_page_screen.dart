@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:simple_gallery/src2/detail/detail_decoration.dart';
 import 'package:simple_gallery/src2/detail/detail_item_preview.dart';
 import 'package:simple_gallery/src2/detail/zoom/zoomable_notification.dart';
+import 'package:simple_gallery/src2/detail/zoom/zoomable_notifier.dart';
 import 'package:simple_gallery/src2/gallery/simple_gallery.dart';
 
 typedef DetailActionBuilder<T extends Object> =
@@ -18,6 +19,7 @@ Future<dynamic> showDetailPage<T extends Object>({
 }) {
   return Navigator.of(context).push(
     PageRouteBuilder(
+      opaque: false,
       pageBuilder: (context, animation, secondaryAnimation) {
         return DetailPageScreen<T>(
           curItem: curItem,
@@ -84,6 +86,17 @@ class DetailPageScreen<T extends Object> extends StatefulWidget {
 
 class _DetailPageScreenState<T extends Object>
     extends State<DetailPageScreen<T>> {
+  double _backgroundOpacity = 1;
+
+  double get backgroundOpacity => _backgroundOpacity;
+
+  set backgroundOpacity(double value) {
+    if (value != _backgroundOpacity && mounted) {
+      _backgroundOpacity = value;
+      setState(() {});
+    }
+  }
+
   PageController? _controller;
 
   PageController _getPageController(BoxConstraints constraints) {
@@ -144,7 +157,11 @@ class _DetailPageScreenState<T extends Object>
   }
 
   Widget _buildBackground() {
-    return widget.backgroundWidget ?? ColoredBox(color: Colors.white);
+    return AnimatedOpacity(
+      duration: kDragAnimationDuration,
+      opacity: _backgroundOpacity,
+      child: widget.backgroundWidget ?? ColoredBox(color: Colors.white),
+    );
   }
 
   Widget _buildBackButton(BuildContext context) {
@@ -193,6 +210,17 @@ class _DetailPageScreenState<T extends Object>
           );
         }
 
+        break;
+      case DragUpdateNotification():
+        backgroundOpacity = 1 - notification.fraction;
+        break;
+      case DragEndNotification():
+        if (notification.popBack) {
+          backgroundOpacity = 0;
+          Navigator.of(context).pop();
+        } else {
+          backgroundOpacity = 1;
+        }
         break;
       default:
         break;

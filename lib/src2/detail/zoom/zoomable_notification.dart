@@ -20,3 +20,15 @@ class OverscrollEndNotification extends ZoomableNotification {
 
   OverscrollEndNotification(this.velocity);
 }
+
+class DragUpdateNotification extends ZoomableNotification {
+  final double fraction;
+
+  DragUpdateNotification(this.fraction);
+}
+
+class DragEndNotification extends ZoomableNotification {
+  final bool popBack;
+
+  DragEndNotification(this.popBack);
+}
