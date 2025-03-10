@@ -31,7 +31,28 @@ class _CustomImageGalleryState extends State<CustomImageGallery> {
           itemBuilder: (context, item, itemSize, viewSize) {
             return Stack(
               children: [
-                Positioned.fill(child: Image(image: item, fit: BoxFit.cover)),
+                Positioned.fill(
+                  child: Image(
+                    image: item,
+                    fit: BoxFit.cover,
+                    frameBuilder: (
+                      context,
+                      child,
+                      frame,
+                      wasSynchronouslyLoaded,
+                    ) {
+                      if (wasSynchronouslyLoaded || frame != null) {
+                        return child;
+                      }
+                      return Center(
+                        child: ColoredBox(
+                          color: Colors.black38,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      );
+                    },
+                  ),
+                ),
                 Positioned(
                   bottom: 5,
                   right: 5,
@@ -51,7 +72,26 @@ class _CustomImageGalleryState extends State<CustomImageGallery> {
               return Stack(
                 children: [
                   Positioned.fill(
-                    child: Image(image: item, fit: BoxFit.contain),
+                    child: Image(
+                      image: item,
+                      fit: BoxFit.contain,
+                      frameBuilder: (
+                        context,
+                        child,
+                        frame,
+                        wasSynchronouslyLoaded,
+                      ) {
+                        if (wasSynchronouslyLoaded || frame != null) {
+                          return child;
+                        }
+                        return Center(
+                          child: ColoredBox(
+                            color: Colors.black38,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                   Positioned(
                     bottom: 5,

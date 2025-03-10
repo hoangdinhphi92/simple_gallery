@@ -43,6 +43,12 @@ For example, to show several images with paths:
       body: SimpleGallery<String>(
         items: imageFiles,
         itemSize: (item) => getImageSize(item),
+        placeholderBuilder: (context, item) {
+            return ColoredBox(
+              color: Colors.black38,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          },
         itemBuilder: (context, item, itemSize, viewSize) {
           return Image.file(
             File(item),
@@ -53,6 +59,12 @@ For example, to show several images with paths:
         detailDecoration: DetailDecoration(
           detailBuilder: (context, item, itemSize, viewSize) {
             return Image.file(File(item), fit: BoxFit.contain);
+          },
+          placeholderBuilder: (context, item) {
+            return ColoredBox(
+              color: Colors.black38,
+              child: Center(child: CircularProgressIndicator()),
+            );
           },
           pageGap: 16,
         ),
@@ -85,12 +97,24 @@ This example is using NetworkImage:
       body: SimpleGallery<NetworkImage>(
         items: listNetworkImages,
         itemSize: (item) => getImageSize(item),
+        placeholderBuilder: (context, item) {
+          return ColoredBox(
+            color: Colors.black38,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        },
         itemBuilder: (context, item, itemSize, viewSize) {
           return Image(image: item, fit: BoxFit.cover,);
         },
         detailDecoration: DetailDecoration(
           detailBuilder: (context, item, itemSize, viewSize) {
             return Image(image: item, fit: BoxFit.contain);
+          },
+          placeholderBuilder: (context, item) {
+            return ColoredBox(
+              color: Colors.black38,
+              child: Center(child: CircularProgressIndicator()),
+            );
           },
           pageGap: 16,
         ),
@@ -118,12 +142,24 @@ Widget build(BuildContext context) {
       mainAxisSpacing: 8.0,
       childAspectRatio: 1.0,
       padding: const EdgeInsets.all(8.0),
+      placeholderBuilder: (context, item) {
+        return ColoredBox(
+          color: Colors.black38,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      },
       itemBuilder: (context, item, itemSize, viewSize) {
         return Image(image: item, fit: BoxFit.cover,);
       },
       detailDecoration: DetailDecoration(
         detailBuilder: (context, item, itemSize, viewSize) {
           return Image(image: item, fit: BoxFit.contain);
+        },
+        placeholderBuilder: (context, item) {
+          return ColoredBox(
+            color: Colors.black38,
+            child: Center(child: CircularProgressIndicator()),
+          );
         },
         pageGap: 16,
       ),
@@ -151,6 +187,12 @@ List<NetworkImage> listNetworkImages = [
         child: SimpleGallery<NetworkImage>(
           items: listNetworkImages,
           itemSize: (item) => getNetworkImageSize(item.url.toString()),
+          placeholderBuilder: (context, item) {
+            return ColoredBox(
+              color: Colors.black38,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          },
           itemBuilder: (context, item, itemSize, viewSize) {
             return Stack(
               children: [
@@ -178,6 +220,12 @@ List<NetworkImage> listNetworkImages = [
                 ],
               );
             },
+            placeholderBuilder: (context, item) {
+              return ColoredBox(
+                color: Colors.black38,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            },
             pageGap: 16,
           ),
         ),
@@ -197,6 +245,12 @@ Widget build(BuildContext context) {
     body: SimpleGallery<NetworkImage>(
       items: listNetworkImages,
       itemSize: (item) => getImageSize(item),
+      placeholderBuilder: (context, item) {
+        return ColoredBox(
+          color: Colors.black38,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      },
       itemBuilder: (context, item, itemSize, viewSize) {
         return Image(image: item, fit: BoxFit.cover,);
       },
@@ -204,6 +258,12 @@ Widget build(BuildContext context) {
         backgroundWidget: ColoredBox(color: Colors.yellow),
         headerBuilder: _buildHeaderDetail,
         footerBuilder: _buildFooterDetail,
+        placeholderBuilder: (context, item) {
+          return ColoredBox(
+            color: Colors.black38,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        },
         detailBuilder: (context, item, itemSize, viewSize) {
           return Image(image: item, fit: BoxFit.contain);
         },

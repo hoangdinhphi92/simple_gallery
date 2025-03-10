@@ -74,9 +74,42 @@ class _LocalAndNetworkImageGalleryState
                     File(item.imagePath),
                     cacheWidth: viewSize.width.round(),
                     fit: BoxFit.cover,
+                    frameBuilder: (
+                      BuildContext context,
+                      Widget child,
+                      int? frame,
+                      bool wasSynchronouslyLoaded,
+                    ) {
+                      if (wasSynchronouslyLoaded) {
+                        return child; // Display the child directly if loaded synchronously
+                      }
+                      return ColoredBox(
+                        color: Colors.black38,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    },
                   );
                 } else {
-                  return Image.network(item.imagePath, fit: BoxFit.cover,);
+                  return Image.network(
+                    item.imagePath,
+                    fit: BoxFit.cover,
+                    frameBuilder: (
+                      context,
+                      child,
+                      frame,
+                      wasSynchronouslyLoaded,
+                    ) {
+                      if (wasSynchronouslyLoaded || frame != null) {
+                        return child;
+                      }
+                      return Center(
+                        child: ColoredBox(
+                          color: Colors.black38,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      );
+                    },
+                  );
                 }
               },
               placeholderBuilder: (context, item) {
@@ -95,9 +128,47 @@ class _LocalAndNetworkImageGalleryState
                 detailBuilder: (context, item, itemSize, viewSize) {
                   final itemType = item.imageType;
                   if (itemType == ImageType.local) {
-                    return Image.file(File(item.imagePath), fit: BoxFit.contain);
+                    return Image.file(
+                      File(item.imagePath),
+                      fit: BoxFit.contain,
+                      frameBuilder: (
+                        context,
+                        child,
+                        frame,
+                        wasSynchronouslyLoaded,
+                      ) {
+                        if (wasSynchronouslyLoaded || frame != null) {
+                          return child;
+                        }
+                        return Center(
+                          child: ColoredBox(
+                            color: Colors.black38,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        );
+                      },
+                    );
                   } else {
-                    return Image.network(item.imagePath, fit: BoxFit.contain);
+                    return Image.network(
+                      item.imagePath,
+                      fit: BoxFit.contain,
+                      frameBuilder: (
+                        context,
+                        child,
+                        frame,
+                        wasSynchronouslyLoaded,
+                      ) {
+                        if (wasSynchronouslyLoaded || frame != null) {
+                          return child;
+                        }
+                        return Center(
+                          child: ColoredBox(
+                            color: Colors.black38,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        );
+                      },
+                    );
                   }
                 },
                 pageGap: 16,
