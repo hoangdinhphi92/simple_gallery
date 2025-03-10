@@ -199,19 +199,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   void onPointerUp(PointerUpEvent event) async {
     _activePointers.remove(event.pointer);
 
-    // Detect double tap
-    final isDoubleTap =
-        _lastTapEvent != null &&
-        (_lastTapEvent!.position - event.position).distance <
-            kDoubleTapDistance &&
-        (event.timeStamp - _lastTapEvent!.timeStamp).inMilliseconds <
-            kDoubleTapDurationInMs;
-
-    if (isDoubleTap) {
-      value = value.copyWith(state: ZoomableState.doubleTap);
-    }
-
-    _lastTapEvent = event;
+    _detectDoubleTap(event);
 
     _onPointerUp();
   }
@@ -617,6 +605,21 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   void _sendDragEndNotification(bool popBack) {
     DragEndNotification(popBack).dispatch(context);
+  }
+
+  void _detectDoubleTap(PointerUpEvent event) {
+    final isDoubleTap =
+        _lastTapEvent != null &&
+        (_lastTapEvent!.position - event.position).distance <
+            kDoubleTapDistance &&
+        (event.timeStamp - _lastTapEvent!.timeStamp).inMilliseconds <
+            kDoubleTapDurationInMs;
+
+    if (isDoubleTap) {
+      value = value.copyWith(state: ZoomableState.doubleTap);
+    }
+
+    _lastTapEvent = event;
   }
 
   @override
