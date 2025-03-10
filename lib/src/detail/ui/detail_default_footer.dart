@@ -35,19 +35,6 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
   }
 
   @override
-  void dispose() {
-    super.dispose();
-    widget.pageController.removeListener(_onPageChanged);
-  }
-
-  void _onPageChanged() {
-    final page = widget.pageController.page;
-    if (page == null) return;
-
-    currentPage = page.round();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return ColoredBox(
       color: Colors.white,
@@ -58,13 +45,16 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
         child: Column(
           children: [
             Divider(thickness: 1, color: Colors.black12, height: 0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildPreviousButton(),
-                _buildPageIndex(),
-                _buildNextButton(),
-              ],
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  if (widget.totalPage > 1) _buildPreviousButton(),
+                  _buildPageIndex(),
+                  if (widget.totalPage > 1) _buildNextButton(),
+                ],
+              ),
             ),
           ],
         ),
@@ -75,45 +65,71 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
   Widget _buildPageIndex() {
     if (currentPage == -1) return const SizedBox.shrink();
 
-    return Material(
-      color: Colors.transparent,
-      child: Text(
-        "${currentPage + 1}/${widget.totalPage}",
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+    return SizedBox(
+      height: 48,
+      child: Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Text(
+            "${currentPage + 1}/${widget.totalPage}",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildNextButton() {
     final isLastPage = currentPage >= widget.totalPage - 1;
-    return IconButton(
-      onPressed:
-          isLastPage
-              ? null
-              : () {
-                widget.pageController.nextPage(
-                  duration: kNextPageDuration,
-                  curve: Curves.decelerate,
-                );
-              },
-      icon: Icon(Icons.arrow_forward_rounded),
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: IconButton(
+        onPressed:
+            isLastPage
+                ? null
+                : () {
+                  widget.pageController.nextPage(
+                    duration: kNextPageDuration,
+                    curve: Curves.decelerate,
+                  );
+                },
+        icon: Icon(Icons.arrow_forward_rounded),
+      ),
     );
   }
 
   Widget _buildPreviousButton() {
     final isFirstPage = currentPage <= 0;
 
-    return IconButton(
-      onPressed:
-          isFirstPage
-              ? null
-              : () {
-                widget.pageController.previousPage(
-                  duration: kNextPageDuration,
-                  curve: Curves.decelerate,
-                );
-              },
-      icon: Icon(Icons.arrow_back_rounded),
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: IconButton(
+        onPressed:
+            isFirstPage
+                ? null
+                : () {
+                  widget.pageController.previousPage(
+                    duration: kNextPageDuration,
+                    curve: Curves.decelerate,
+                  );
+                },
+        icon: Icon(Icons.arrow_back_rounded),
+      ),
     );
+  }
+
+  void _onPageChanged() {
+    final page = widget.pageController.page;
+    if (page == null) return;
+
+    currentPage = page.round();
+  }
+
+  @override
+  void dispose() {
+    widget.pageController.removeListener(_onPageChanged);
+    super.dispose();
   }
 }

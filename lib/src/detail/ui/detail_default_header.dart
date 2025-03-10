@@ -20,11 +20,18 @@ class DetailDefaultHeader extends StatelessWidget {
   }
 
   Widget _buildBackButton(BuildContext context) {
-    return IconButton(
-      onPressed: () {
-        Navigator.of(context).pop();
-      },
-      icon: Icon(Icons.arrow_back_ios_rounded),
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Icon(Icons.arrow_back_ios_rounded),
+        ),
+      ),
     );
   }
 }

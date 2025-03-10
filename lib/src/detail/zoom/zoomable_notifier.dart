@@ -313,43 +313,11 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       // Calculate new position to center the touched point
       var newPosition = screenCenter - widgetTouchPoint * newScale;
 
-      // Calculate scaled dimensions at new scale
-      final newScaledWidth = value.childSize.width * newScale;
-      final newScaledHeight = value.childSize.height * newScale;
-
-      // Constrain X position
-      double newX = newPosition.dx;
-      if (newScaledWidth > value.viewSize.width) {
-        newX = newX.clamp(
-          value.viewSize.width - newScaledWidth, // Left edge
-          0.0, // Right edge
-        );
-      } else {
-        newX = (value.viewSize.width - newScaledWidth) / 2; // Center if smaller
-      }
-
-      // Constrain Y position
-      double newY = newPosition.dy;
-      if (newScaledHeight > value.viewSize.height) {
-        newY = newY.clamp(
-          value.viewSize.height - newScaledHeight, // Top edge
-          0.0, // Bottom edge
-        );
-      } else {
-        newY =
-            (value.viewSize.height - newScaledHeight) / 2; // Center if smaller
-      }
-
-      // Create constrained position
-      newPosition = Offset(newX, newY);
+      // // Create constrained position
+      newPosition = _calcValidPosition(scale: newScale, position: newPosition);
 
       // Animate to new scale and position
-      await _animateToValue(
-        newScale,
-        newPosition,
-        state: ZoomableState.animating,
-        duration: kZoomAnimationDuration,
-      );
+      await _animateToValue(newScale, newPosition);
     }
   }
 
@@ -454,6 +422,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   Offset _calcValidPosition({
     Offset pixelsPerSecond = Offset.zero,
     double? scale,
+    Offset? position,
   }) {
     final newScale =
         scale ?? value.scale.clamp(value.initScale, value.maxScale);
@@ -463,13 +432,15 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
     double newX, newY;
 
+    final newPosition = position ?? value.position;
+
     // Handle x-axis
     if (scaledWidth <= value.viewSize.width) {
       // Center if it fits
       newX = (value.viewSize.width - scaledWidth) / 2;
     } else {
       // Constrain if it exceeds
-      var dx = value.position.dx;
+      var dx = newPosition.dx;
       if (pixelsPerSecond.dx.abs() > kMinFlingVelocity) {
         dx =
             dx +
@@ -490,7 +461,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     } else {
       // Constrain if it exceeds
 
-      var dy = value.position.dy;
+      var dy = newPosition.dy;
       if (pixelsPerSecond.dy.abs() > kMinFlingVelocity) {
         dy =
             dy +

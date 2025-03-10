@@ -1,6 +1,3 @@
-import 'dart:developer';
-
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src/detail/detail_decoration.dart';
 import 'package:simple_gallery/src/detail/detail_item_preview.dart';
@@ -44,13 +41,16 @@ Future<dynamic> showDetailPage<T extends Object>({
           backgroundWidget: decoration.backgroundWidget,
         );
       },
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
     ),
   );
 }
 
 const kNextPageDuration = Duration(milliseconds: 250);
 const kTriggerSwipeVelocity = 200;
-const kFadeHeaderDuration = Duration(milliseconds: 250);
+const kFadeHeaderDuration = Duration(milliseconds: 200);
 
 class DetailPageScreen<T extends Object> extends StatefulWidget {
   final T? curItem;
@@ -107,19 +107,20 @@ class _DetailPageScreenState<T extends Object>
     }
   }
 
+  T? _currentItem;
+  T? get currentItem => _currentItem ?? widget.curItem;
+
   PageController? _controller;
 
-  bool _userConfirmVisible = true;
-  bool get userConfirmVisible => _userConfirmVisible;
-  set userConfirmVisible(bool value) {
-    if (_userConfirmVisible != value) {
-      _userConfirmVisible = value;
-      _visibleHeader = value;
-      setState(() {});
+  bool _userForceVisibleHeader = true;
+  bool get userForceVisibleHeade => _userForceVisibleHeader;
+  set userForceVisibleHeade(bool value) {
+    if (_userForceVisibleHeader != value) {
+      _userForceVisibleHeader = value;
     }
   }
 
-  bool _visibleHeader = true;
+  bool _visibleHeader = false;
   bool get visibleHeader => _visibleHeader;
   set visibleHeader(bool value) {
     if (_visibleHeader != value) {
@@ -128,15 +129,12 @@ class _DetailPageScreenState<T extends Object>
     }
   }
 
-  PageController _getPageController(BoxConstraints constraints) {
-    final initialPage =
-        widget.curItem != null ? widget.items.indexOf(widget.curItem!) : 0;
+  ZoomableState _currentZoomState = ZoomableState.idle;
 
-    _controller ??= PageController(
-      initialPage: initialPage,
-      viewportFraction: 1 + (widget.pageGap / constraints.maxWidth),
-    );
-    return _controller!;
+  @override
+  void initState() {
+    super.initState();
+    _showHeaderAndFooterAfterPageTransition();
   }
 
   @override
@@ -148,13 +146,22 @@ class _DetailPageScreenState<T extends Object>
           children: [
             Positioned.fill(child: _buildBackground()),
             Positioned.fill(child: _buildPageView(controller)),
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  visibleHeader = !visibleHeader;
+                  userForceVisibleHeade = visibleHeader;
+                },
+                onDoubleTap: () {},
+                onLongPress: () {},
+              ),
+            ),
             Positioned(
               left: 0,
               top: 0,
               right: 0,
-              child: AnimatedOpacity(
-                opacity: visibleHeader ? 1.0 : 0.0,
-                duration: kFadeHeaderDuration,
+              child: _buildAnimatedOpacityWrapper(
+                visibleHeader,
                 child: _buildHeader(context),
               ),
             ),
@@ -162,22 +169,9 @@ class _DetailPageScreenState<T extends Object>
               left: 0,
               right: 0,
               bottom: 0,
-              child: AnimatedOpacity(
-                opacity: visibleHeader ? 1.0 : 0.0,
-                duration: kFadeHeaderDuration,
+              child: _buildAnimatedOpacityWrapper(
+                visibleHeader,
                 child: _buildFooter(context),
-              ),
-            ),
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  log("onTap");
-                  userConfirmVisible = !visibleHeader;
-                },
-                onDoubleTap: () {
-                  log("onDoubleTap");
-                },
-                onLongPress: () {},
               ),
             ),
           ],
@@ -224,22 +218,75 @@ class _DetailPageScreenState<T extends Object>
   }
 
   Widget _buildHeader(BuildContext context) {
-    if (widget.headerBuilder != null && _controller != null) {
-      return widget.headerBuilder!.call(context, widget.curItem!, _controller!);
+    if (widget.headerBuilder != null &&
+        _controller != null &&
+        currentItem != null) {
+      return widget.headerBuilder!.call(context, currentItem!, _controller!);
     }
 
     return DetailDefaultHeader();
   }
 
   Widget _buildFooter(BuildContext context) {
-    if (widget.footerBuilder != null && _controller != null) {
-      return widget.footerBuilder!.call(context, widget.curItem!, _controller!);
+    if (widget.footerBuilder != null &&
+        _controller != null &&
+        currentItem != null) {
+      return widget.footerBuilder!.call(context, currentItem!, _controller!);
     }
 
     return DetailDefaultFooter(
       totalPage: widget.items.length,
       pageController: _controller!,
     );
+  }
+
+  Widget _buildAnimatedOpacityWrapper(bool visible, {required Widget child}) {
+    return IgnorePointer(
+      ignoring: !visible,
+      child: AnimatedOpacity(
+        opacity: visible ? 1.0 : 0.0,
+        duration: kFadeHeaderDuration,
+        child: child,
+      ),
+    );
+  }
+
+  PageController _getPageController(BoxConstraints constraints) {
+    if (_controller != null) return _controller!;
+
+    final initialPage =
+        widget.curItem != null ? widget.items.indexOf(widget.curItem!) : 0;
+
+    _controller = PageController(
+      initialPage: initialPage,
+      viewportFraction: 1 + (widget.pageGap / constraints.maxWidth),
+    );
+
+    _controller!.addListener(_onPageChanged);
+
+    return _controller!;
+  }
+
+  void _onPageChanged() {
+    final pageIndex = _controller?.page?.round();
+    if (pageIndex == null) return;
+
+    _currentItem = widget.items[pageIndex];
+  }
+
+  void _showHeaderAndFooterAfterPageTransition() {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      var route = ModalRoute.of(context);
+
+      void handler(status) {
+        if (status == AnimationStatus.completed) {
+          visibleHeader = true;
+          route?.animation?.removeStatusListener(handler);
+        }
+      }
+
+      route?.animation?.addStatusListener(handler);
+    });
   }
 
   bool _onNotification(ZoomableNotification notification) {
@@ -267,18 +314,24 @@ class _DetailPageScreenState<T extends Object>
   }
 
   void _onZoomStateUpdate(ZoomStateUpdateNotification notification) {
-    if (!userConfirmVisible) return;
-
     switch (notification.state) {
       case ZoomableState.idle:
-        visibleHeader = true;
+        visibleHeader = userForceVisibleHeade;
       case ZoomableState.zooming:
-      case ZoomableState.zoomed:
+        visibleHeader = false;
+      case ZoomableState.doubleTap:
+        if (_currentZoomState == ZoomableState.zoomed) {
+          visibleHeader = userForceVisibleHeade;
+        } else if (_currentZoomState == ZoomableState.idle ||
+            _currentZoomState == ZoomableState.animating) {
+          visibleHeader = false;
+        }
       case ZoomableState.dragging:
         visibleHeader = false;
       default:
         break;
     }
+    _currentZoomState = notification.state;
   }
 
   void _onOverScrollUpdate(
@@ -330,5 +383,11 @@ class _DetailPageScreenState<T extends Object>
     } else {
       backgroundOpacity = 1;
     }
+  }
+
+  @override
+  void dispose() {
+    _controller?.removeListener(_onPageChanged);
+    super.dispose();
   }
 }
