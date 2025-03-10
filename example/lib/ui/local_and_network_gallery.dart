@@ -32,7 +32,6 @@ class _LocalAndNetworkImageGalleryState
     if (pickedFiles.isNotEmpty) {
       setState(() {
         listImageObject.clear();
-        // imageFiles = pickedFiles.map((e) => e.path).toList();
         List<String> imageFromLocal = pickedFiles.map((e) => e.path).toList();
 
         for (var e in imageFromLocal) {
