@@ -109,13 +109,19 @@ class _DetailPageScreenState<T extends Object>
 
   T? _currentItem;
   T? get currentItem => _currentItem ?? widget.curItem;
+  set currentItem(T? value) {
+    if (_currentItem != value && mounted) {
+      _currentItem = value;
+      setState(() {});
+    }
+  }
 
   PageController? _controller;
 
   bool _userForceVisibleHeader = true;
   bool get userForceVisibleHeade => _userForceVisibleHeader;
   set userForceVisibleHeade(bool value) {
-    if (_userForceVisibleHeader != value) {
+    if (_userForceVisibleHeader != value && mounted) {
       _userForceVisibleHeader = value;
     }
   }
@@ -123,7 +129,7 @@ class _DetailPageScreenState<T extends Object>
   bool _visibleHeader = false;
   bool get visibleHeader => _visibleHeader;
   set visibleHeader(bool value) {
-    if (_visibleHeader != value) {
+    if (_visibleHeader != value && mounted) {
       _visibleHeader = value;
       setState(() {});
     }
@@ -271,7 +277,7 @@ class _DetailPageScreenState<T extends Object>
     final pageIndex = _controller?.page?.round();
     if (pageIndex == null) return;
 
-    _currentItem = widget.items[pageIndex];
+    currentItem = widget.items[pageIndex];
   }
 
   void _showHeaderAndFooterAfterPageTransition() {
