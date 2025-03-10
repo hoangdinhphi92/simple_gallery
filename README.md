@@ -20,16 +20,16 @@ import 'package:simple_gallery/simple_gallery.dart';
 
 ## Features
 
-* Show a list of images in GridView (Allow to custom the GridView properties)
+* Show a list of images(widgets) in GridView (Allow to custom the GridView properties)
 * Allow to custom each item in GridView  using `itemBuilder`
-* By clicking to GridView item to show each detail image in full-screen in a PageView
-* Allow to custom the detail image using `detailDecoration`
-* Use pinch & zoom to zoom in and out of images
-* Enable to drag up & down the detail image with opacity background to back to GridView with Hero animation
-* Allow to scroll with page snap to view each detail image in PageView
-* No dependencies besides Flutter
+* By clicking to GridView item to show each detail widget in full-screen in a PageView
+* Allow to custom the detail widget using `detailDecoration`
+* Use pinch & zoom to zoom in and out of images(widgets)
+* Enable to drag up & down the detail widget with opacity background to back to GridView with Hero animation
+* Allow to scroll with page snap to view each detail widget in PageView
 * Fully customizable loading/progress indicator
 * Allow double tapping to zoom
+* No dependencies besides Flutter
 
 
 ## Basic usage
