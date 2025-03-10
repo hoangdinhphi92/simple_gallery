@@ -5,8 +5,7 @@ An easy way to display images as a gallery in full-screen with Hero animation, i
 It also can show any widgets instead of an image type, such as Container, Text or a SVG,...
 
 
-///.///////
-![Simple_Gallery Demo](https://github.com/thesmythgroup/easy_image_viewer/blob/main/demo_images/demo1.gif?raw=true "Simple Gallery Demo")
+![Simple_Gallery Demo](demo_image/app_demo.gif "Simple Gallery Demo")
 
 
 ## Installation
@@ -75,7 +74,8 @@ For example, to show several images with paths:
 
 Note: `itemSize` is the size of image, it is required for Hero animation and cache image.
 
-//////demo
+
+![Simple_Gallery Demo](demo_image/basic_usage_demo.gif "Simple Gallery Basic Demo")
 
 
 ## Show difference type of image
@@ -123,7 +123,7 @@ This example is using NetworkImage:
   }
 ```
 
-// result######
+![Simple_Gallery Demo](demo_image/network_image_demo.gif "NetworkImage Demo")
 
 
 ## Custom the Gallery
@@ -168,7 +168,8 @@ Widget build(BuildContext context) {
 }
 ```
 
-// result image
+![Simple_Gallery Demo](demo_image/custom_gridview_image.png "Custom Gridview Demo")
+
 
 Allow to custom each item in Gallery using `itemBuilder` & `detailBuilder`:
 
@@ -234,9 +235,12 @@ List<NetworkImage> listNetworkImages = [
   }
 ```
 
+![Simple_Gallery Demo](demo_image/custom_image_demo.gif "Custom widget in Gallery Demo")
+
+
 ## Custom the placeHolder,header & footer in detail screen
 
-Using `detailDecoration` to custom the background,placeHolder,header & footer for detail image in PageView
+Using `detailDecoration` to custom the background,placeHolder,header & footer for detail widget in PageView
 
 ```dart
   @override
@@ -307,4 +311,7 @@ Widget _buildHeaderDetail(BuildContext context, NetworkImage image) {
   );
 }
 ```
+
+![Simple_Gallery Demo](demo_image/custom_header_footer.gif "Custom Detail Widget Demo")
+
 
