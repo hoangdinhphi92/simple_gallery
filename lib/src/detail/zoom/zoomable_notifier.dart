@@ -10,6 +10,8 @@ const kFlingAnimationDuration = Duration(milliseconds: 500);
 const kDragAnimationDuration = Duration(milliseconds: 250);
 const kDoubleTapDistance = 50;
 const kDoubleTapDurationInMs = 200;
+const kTapDistance = 50;
+const kTapDurationInMs = 200;
 const kOneSecondInMs = 1000;
 
 enum ZoomableState {
@@ -21,7 +23,6 @@ enum ZoomableState {
   movingPage,
   dragging,
   fling,
-  doubleTap,
 }
 
 class ZoomableValue {
@@ -113,10 +114,13 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     PointerDeviceKind.touch,
   );
 
+  final VoidCallback onTap;
+
   ZoomableNotifier({
     required this.context,
     required Size childSize,
     required Size viewSize,
+    required this.onTap,
   }) : super(ZoomableValue.from(viewSize, childSize));
 
   @override
@@ -132,13 +136,15 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   double? _initialScaleDistance;
   Offset? _lastFocalPoint;
   Offset? _initialDragPosition;
-  PointerUpEvent? _lastTapEvent;
+  final List<PointerUpEvent> _pointerUpEvents = [];
+  PointerDownEvent? _lastPointerDownEvent;
 
   void onPointerDown(PointerDownEvent event) {
     if (_activePointers.length == 2 ||
         value.state == ZoomableState.movingPage) {
       return;
     }
+    _lastPointerDownEvent = event;
     _activePointers[event.pointer] = event.position;
 
     // If we have exactly 2 pointers, we'll start zooming
@@ -198,8 +204,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   void onPointerUp(PointerUpEvent event) async {
     _activePointers.remove(event.pointer);
-
-    _detectDoubleTap(event);
+    _pointerUpEvents.add(event);
 
     _onPointerUp();
   }
@@ -232,9 +237,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   void _onReleaseFinger() async {
     final pixelsPerSecond = _velocityTracker.getVelocity().pixelsPerSecond;
-    if (value.state == ZoomableState.doubleTap && _lastTapEvent != null) {
-      await _onDoubleTap(_lastTapEvent!.position);
-      _lastTapEvent = null;
+
+    if (_detectDoubleTap()) {
+      await _onDoubleTap(_pointerUpEvents.last.position);
+      _pointerUpEvents.clear();
     } else if (value.state == ZoomableState.dragging) {
       final fraction =
           (value.position - _initialDragPosition!).distance /
@@ -607,19 +613,40 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     DragEndNotification(popBack).dispatch(context);
   }
 
-  void _detectDoubleTap(PointerUpEvent event) {
+  bool _detectDoubleTap() {
+    if (_pointerUpEvents.length < 2) return false;
+
+    final lastPointerUpEvent = _pointerUpEvents.last;
+    final almostLastPointerUpEvent =
+        _pointerUpEvents[_pointerUpEvents.length - 2];
+
     final isDoubleTap =
-        _lastTapEvent != null &&
-        (_lastTapEvent!.position - event.position).distance <
+        (lastPointerUpEvent.position - almostLastPointerUpEvent.position)
+                .distance <
             kDoubleTapDistance &&
-        (event.timeStamp - _lastTapEvent!.timeStamp).inMilliseconds <
+        (lastPointerUpEvent.timeStamp - almostLastPointerUpEvent.timeStamp)
+                .inMilliseconds <
             kDoubleTapDurationInMs;
 
-    if (isDoubleTap) {
-      value = value.copyWith(state: ZoomableState.doubleTap);
+    return isDoubleTap;
+  }
+
+  bool _detectTap() {
+    final lastPointerDownEvent = _lastPointerDownEvent;
+    final lastPointerUpEvent = _pointerUpEvents.lastOrNull;
+
+    if (lastPointerDownEvent == null || lastPointerUpEvent == null) {
+      return false;
     }
 
-    _lastTapEvent = event;
+    final isTap =
+        (lastPointerDownEvent.position - lastPointerUpEvent.position).distance <
+            kTapDistance &&
+        (lastPointerUpEvent.timeStamp - lastPointerDownEvent.timeStamp)
+                .inMilliseconds <
+            kTapDurationInMs;
+
+    return isTap;
   }
 
   @override

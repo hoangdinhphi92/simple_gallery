@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src/detail/detail_decoration.dart';
 import 'package:simple_gallery/src/detail/detail_item_preview.dart';
@@ -10,6 +12,7 @@ import 'package:simple_gallery/src/gallery/simple_gallery.dart';
 typedef DetailActionBuilder<T extends Object> =
     Widget Function(
       BuildContext context,
+      List<T> items,
       T item,
       PageController pageController,
     );
@@ -155,23 +158,13 @@ class _DetailPageScreenState<T extends Object>
           children: [
             Positioned.fill(child: _buildBackground()),
             Positioned.fill(child: _buildPageView(controller)),
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  visibleHeader = !visibleHeader;
-                  userForceVisibleHeade = visibleHeader;
-                },
-                onDoubleTap: () {},
-                onLongPress: () {},
-              ),
-            ),
             Positioned(
               left: 0,
               top: 0,
               right: 0,
               child: _buildAnimatedOpacityWrapper(
                 visibleHeader,
-                child: _buildHeader(context),
+                child: _buildHeader(context, controller),
               ),
             ),
             Positioned(
@@ -180,7 +173,7 @@ class _DetailPageScreenState<T extends Object>
               bottom: 0,
               child: _buildAnimatedOpacityWrapper(
                 visibleHeader,
-                child: _buildFooter(context),
+                child: _buildFooter(context, controller),
               ),
             ),
           ],
@@ -209,6 +202,9 @@ class _DetailPageScreenState<T extends Object>
                   itemBuilder: widget.itemBuilder,
                   placeholderBuilder: widget.placeholderBuilder,
                   size: item == widget.curItem ? widget.currItemSize : null,
+                  onTap: () {
+                    log("onTap");
+                  },
                 ),
               );
             },
@@ -226,26 +222,32 @@ class _DetailPageScreenState<T extends Object>
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    if (widget.headerBuilder != null &&
-        _controller != null &&
-        currentItem != null) {
-      return widget.headerBuilder!.call(context, currentItem!, _controller!);
+  Widget _buildHeader(BuildContext context, PageController controller) {
+    if (widget.headerBuilder != null && currentItem != null) {
+      return widget.headerBuilder!.call(
+        context,
+        widget.items,
+        currentItem!,
+        controller,
+      );
     }
 
     return DetailDefaultHeader();
   }
 
-  Widget _buildFooter(BuildContext context) {
-    if (widget.footerBuilder != null &&
-        _controller != null &&
-        currentItem != null) {
-      return widget.footerBuilder!.call(context, currentItem!, _controller!);
+  Widget _buildFooter(BuildContext context, PageController controller) {
+    if (widget.footerBuilder != null && currentItem != null) {
+      return widget.footerBuilder!.call(
+        context,
+        widget.items,
+        currentItem!,
+        controller,
+      );
     }
 
     return DetailDefaultFooter(
       totalPage: widget.items.length,
-      pageController: _controller!,
+      pageController: controller,
     );
   }
 
@@ -328,13 +330,13 @@ class _DetailPageScreenState<T extends Object>
         visibleHeader = userForceVisibleHeade;
       case ZoomableState.zooming:
         visibleHeader = false;
-      case ZoomableState.doubleTap:
-        if (_currentZoomState == ZoomableState.zoomed) {
-          visibleHeader = userForceVisibleHeade;
-        } else if (_currentZoomState == ZoomableState.idle ||
-            _currentZoomState == ZoomableState.animating) {
-          visibleHeader = false;
-        }
+      // case ZoomableState.doubleTap:
+      //   if (_currentZoomState == ZoomableState.zoomed) {
+      //     visibleHeader = userForceVisibleHeade;
+      //   } else if (_currentZoomState == ZoomableState.idle ||
+      //       _currentZoomState == ZoomableState.animating) {
+      //     visibleHeader = false;
+      //   }
       case ZoomableState.dragging:
         visibleHeader = false;
       default:
