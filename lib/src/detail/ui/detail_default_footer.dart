@@ -52,7 +52,9 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
     return ColoredBox(
       color: Colors.white,
       child: Padding(
-        padding: EdgeInsets.only(top: MediaQuery.viewPaddingOf(context).bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewPaddingOf(context).bottom,
+        ),
         child: Column(
           children: [
             Divider(thickness: 1, color: Colors.black12, height: 0),
@@ -83,25 +85,34 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
   }
 
   Widget _buildNextButton() {
+    final isLastPage = currentPage >= widget.totalPage - 1;
     return IconButton(
-      onPressed: () {
-        widget.pageController.nextPage(
-          duration: kNextPageDuration,
-          curve: Curves.decelerate,
-        );
-      },
+      onPressed:
+          isLastPage
+              ? null
+              : () {
+                widget.pageController.nextPage(
+                  duration: kNextPageDuration,
+                  curve: Curves.decelerate,
+                );
+              },
       icon: Icon(Icons.arrow_forward_rounded),
     );
   }
 
   Widget _buildPreviousButton() {
+    final isFirstPage = currentPage <= 0;
+
     return IconButton(
-      onPressed: () {
-        widget.pageController.previousPage(
-          duration: kNextPageDuration,
-          curve: Curves.decelerate,
-        );
-      },
+      onPressed:
+          isFirstPage
+              ? null
+              : () {
+                widget.pageController.previousPage(
+                  duration: kNextPageDuration,
+                  curve: Curves.decelerate,
+                );
+              },
       icon: Icon(Icons.arrow_back_rounded),
     );
   }

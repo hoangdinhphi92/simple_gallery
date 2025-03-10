@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src/detail/detail_decoration.dart';
 import 'package:simple_gallery/src/detail/detail_item_preview.dart';
@@ -47,6 +50,7 @@ Future<dynamic> showDetailPage<T extends Object>({
 
 const kNextPageDuration = Duration(milliseconds: 250);
 const kTriggerSwipeVelocity = 200;
+const kFadeHeaderDuration = Duration(milliseconds: 250);
 
 class DetailPageScreen<T extends Object> extends StatefulWidget {
   final T? curItem;
@@ -105,6 +109,25 @@ class _DetailPageScreenState<T extends Object>
 
   PageController? _controller;
 
+  bool _userConfirmVisible = true;
+  bool get userConfirmVisible => _userConfirmVisible;
+  set userConfirmVisible(bool value) {
+    if (_userConfirmVisible != value) {
+      _userConfirmVisible = value;
+      _visibleHeader = value;
+      setState(() {});
+    }
+  }
+
+  bool _visibleHeader = true;
+  bool get visibleHeader => _visibleHeader;
+  set visibleHeader(bool value) {
+    if (_visibleHeader != value) {
+      _visibleHeader = value;
+      setState(() {});
+    }
+  }
+
   PageController _getPageController(BoxConstraints constraints) {
     final initialPage =
         widget.curItem != null ? widget.items.indexOf(widget.curItem!) : 0;
@@ -125,12 +148,37 @@ class _DetailPageScreenState<T extends Object>
           children: [
             Positioned.fill(child: _buildBackground()),
             Positioned.fill(child: _buildPageView(controller)),
-            Positioned(left: 0, top: 0, right: 0, child: _buildHeader(context)),
+            Positioned(
+              left: 0,
+              top: 0,
+              right: 0,
+              child: AnimatedOpacity(
+                opacity: visibleHeader ? 1.0 : 0.0,
+                duration: kFadeHeaderDuration,
+                child: _buildHeader(context),
+              ),
+            ),
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: _buildFooter(context),
+              child: AnimatedOpacity(
+                opacity: visibleHeader ? 1.0 : 0.0,
+                duration: kFadeHeaderDuration,
+                child: _buildFooter(context),
+              ),
+            ),
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  log("onTap");
+                  userConfirmVisible = !visibleHeader;
+                },
+                onDoubleTap: () {
+                  log("onDoubleTap");
+                },
+                onLongPress: () {},
+              ),
             ),
           ],
         );
@@ -200,53 +248,87 @@ class _DetailPageScreenState<T extends Object>
 
     switch (notification) {
       case OverscrollUpdateNotification():
-        controller.jumpTo(
-          controller.position.pixels - notification.scrollDelta.dx,
-        );
-
+        _onOverScrollUpdate(notification, controller);
         break;
       case OverscrollEndNotification():
-        final page = controller.page;
-
-        if (page == null || page == widget.items.length - 1 || page == 0) {
-          return false;
-        }
-
-        final isSwipe = notification.velocity.abs() > kTriggerSwipeVelocity;
-        final isSwipeNext = notification.velocity < 0;
-
-        if (isSwipe) {
-          final nextPage = page.toInt() + (isSwipeNext ? 1 : 0);
-          controller.animateToPage(
-            nextPage,
-            duration: kNextPageDuration,
-            curve: Curves.decelerate,
-          );
-        } else {
-          final nextPage = page.round();
-          controller.animateToPage(
-            nextPage,
-            duration: kNextPageDuration,
-            curve: Curves.decelerate,
-          );
-        }
-
-        break;
+        return _onOverScrollEnd(notification, controller);
       case DragUpdateNotification():
-        backgroundOpacity = 1 - notification.fraction;
+        _onDragUpdate(notification);
         break;
       case DragEndNotification():
-        if (notification.popBack) {
-          backgroundOpacity = 0;
-          Navigator.of(context).pop();
-        } else {
-          backgroundOpacity = 1;
-        }
+        _onDragEnd(notification);
         break;
-      default:
+      case ZoomStateUpdateNotification():
+        _onZoomStateUpdate(notification);
         break;
     }
 
     return true;
+  }
+
+  void _onZoomStateUpdate(ZoomStateUpdateNotification notification) {
+    if (!userConfirmVisible) return;
+
+    switch (notification.state) {
+      case ZoomableState.idle:
+        visibleHeader = true;
+      case ZoomableState.zooming:
+      case ZoomableState.zoomed:
+      case ZoomableState.dragging:
+        visibleHeader = false;
+      default:
+        break;
+    }
+  }
+
+  void _onOverScrollUpdate(
+    OverscrollUpdateNotification notification,
+    PageController controller,
+  ) {
+    controller.jumpTo(controller.position.pixels - notification.scrollDelta.dx);
+  }
+
+  bool _onOverScrollEnd(
+    OverscrollEndNotification notification,
+    PageController controller,
+  ) {
+    final page = controller.page;
+
+    if (page == null || page == widget.items.length - 1 || page == 0) {
+      return false;
+    }
+
+    final isSwipe = notification.velocity.abs() > kTriggerSwipeVelocity;
+    final isSwipeNext = notification.velocity < 0;
+
+    if (isSwipe) {
+      final nextPage = page.toInt() + (isSwipeNext ? 1 : 0);
+      controller.animateToPage(
+        nextPage,
+        duration: kNextPageDuration,
+        curve: Curves.decelerate,
+      );
+    } else {
+      final nextPage = page.round();
+      controller.animateToPage(
+        nextPage,
+        duration: kNextPageDuration,
+        curve: Curves.decelerate,
+      );
+    }
+    return true;
+  }
+
+  void _onDragUpdate(DragUpdateNotification notification) {
+    backgroundOpacity = 1 - notification.fraction;
+  }
+
+  void _onDragEnd(DragEndNotification notification) {
+    if (notification.popBack) {
+      backgroundOpacity = 0;
+      Navigator.of(context).pop();
+    } else {
+      backgroundOpacity = 1;
+    }
   }
 }

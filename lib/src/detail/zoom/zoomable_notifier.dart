@@ -15,6 +15,7 @@ const kOneSecondInMs = 1000;
 enum ZoomableState {
   idle,
   zooming,
+  zoomed,
   moving,
   animating,
   movingPage,
@@ -265,7 +266,12 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       await _validatePositionAndScale();
     }
 
-    value = value.copyWith(state: ZoomableState.idle);
+    value = value.copyWith(
+      state:
+          value.scale != value.initScale
+              ? ZoomableState.zoomed
+              : ZoomableState.idle,
+    );
     _initialScaleDistance = null;
     _lastFocalPoint = null;
     _initialDragPosition = null;
