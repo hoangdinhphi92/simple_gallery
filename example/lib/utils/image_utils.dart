@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui show ImmutableBuffer, TargetImageSize;
 
-Future<Size> getImageSize(String path) async {
+Future<Size> getLocalImageSize(String path) async {
   final completer = Completer<Size>();
 
   final file = File(path);
@@ -23,4 +23,14 @@ Future<Size> getImageSize(String path) async {
     },
   );
   return completer.future;
+}
+
+Future<Size> getNetworkImageSize(String url) async {
+  final RegExp regex = RegExp(r'/(\d+)/(\d+)$');
+  final Match? match = regex.firstMatch(url);
+
+  if (match != null) {
+    return Size(int.parse(match.group(1)!).toDouble(), int.parse(match.group(2)!).toDouble());
+  }
+  return Size.zero;
 }

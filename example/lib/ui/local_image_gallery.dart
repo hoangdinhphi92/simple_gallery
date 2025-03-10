@@ -10,14 +10,14 @@ import 'package:simple_gallery_example/utils/image_utils.dart';
 const kGridItemPadding = 4.0;
 const kCrossAxisCount = 3;
 
-class PickImageScreen extends StatefulWidget {
-  const PickImageScreen({super.key});
+class LocalImageGallery extends StatefulWidget {
+  const LocalImageGallery({super.key});
 
   @override
-  State<PickImageScreen> createState() => _PickImageScreenState();
+  State<LocalImageGallery> createState() => _LocalImageGalleryState();
 }
 
-class _PickImageScreenState extends State<PickImageScreen> {
+class _LocalImageGalleryState extends State<LocalImageGallery> {
   List<String> imageFiles = [];
 
   void _pickImages() async {
@@ -42,7 +42,7 @@ class _PickImageScreenState extends State<PickImageScreen> {
           Expanded(
             child: SimpleGallery<String>(
               items: imageFiles,
-              itemSize: (item) => getImageSize(item),
+              itemSize: (item) => getLocalImageSize(item),
               itemBuilder: (context, item, itemSize, viewSize) {
                 return Image.file(
                   File(item),
