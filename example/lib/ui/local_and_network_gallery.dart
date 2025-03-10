@@ -79,7 +79,19 @@ class _LocalAndNetworkImageGalleryState
                   return Image.network(item.imagePath, fit: BoxFit.cover,);
                 }
               },
+              placeholderBuilder: (context, item) {
+                return ColoredBox(
+                  color: Colors.black38,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              },
               detailDecoration: DetailDecoration(
+                placeholderBuilder: (context, item) {
+                  return ColoredBox(
+                    color: Colors.black38,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                },
                 detailBuilder: (context, item, itemSize, viewSize) {
                   final itemType = item.imageType;
                   if (itemType == ImageType.local) {

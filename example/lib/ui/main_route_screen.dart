@@ -14,7 +14,7 @@ class MainRouteScreen extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildButton(
               context,
@@ -54,15 +54,18 @@ class MainRouteScreen extends StatelessWidget {
       DestinationScreenType.custom => CustomImageGallery(),
     };
 
-    return Material(
-      color: Colors.lightBlue,
-      child: InkWell(
-        onTap: () => navigateToScreen(context, destination),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            textInput,
-            style: TextStyle(fontSize: 18, color: Colors.black),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20.0),
+      child: Material(
+        color: Colors.lightBlue,
+        child: InkWell(
+          onTap: () => navigateToScreen(context, destination),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              textInput,
+              style: TextStyle(fontSize: 18, color: Colors.black),
+            ),
           ),
         ),
       ),

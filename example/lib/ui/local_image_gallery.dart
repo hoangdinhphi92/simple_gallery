@@ -50,9 +50,21 @@ class _LocalImageGalleryState extends State<LocalImageGallery> {
                   fit: BoxFit.cover,
                 );
               },
+              placeholderBuilder: (context, item) {
+                return ColoredBox(
+                  color: Colors.black38,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              },
               detailDecoration: DetailDecoration(
                 detailBuilder: (context, item, itemSize, viewSize) {
                   return Image.file(File(item), fit: BoxFit.contain);
+                },
+                placeholderBuilder: (context, item) {
+                  return ColoredBox(
+                    color: Colors.black38,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
                 },
                 pageGap: 16,
               ),

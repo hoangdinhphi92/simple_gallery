@@ -40,6 +40,12 @@ class _CustomImageGalleryState extends State<CustomImageGallery> {
               ],
             );
           },
+          placeholderBuilder: (context, item) {
+            return ColoredBox(
+              color: Colors.black38,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          },
           detailDecoration: DetailDecoration(
             detailBuilder: (context, item, itemSize, viewSize) {
               return Stack(
@@ -53,6 +59,12 @@ class _CustomImageGalleryState extends State<CustomImageGallery> {
                     child: Icon(Icons.favorite, color: Colors.pink),
                   ),
                 ],
+              );
+            },
+            placeholderBuilder: (context, item) {
+              return ColoredBox(
+                color: Colors.black38,
+                child: Center(child: CircularProgressIndicator()),
               );
             },
             pageGap: 16,

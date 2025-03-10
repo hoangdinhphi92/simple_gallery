@@ -2,7 +2,7 @@
 
 An easy way to display images as a gallery in full-screen with Hero animation, including pinch, zoom, drag & double tap to zoom.
 
-It also can show any widget instead of an image, such as Container, Text or a SVG.
+It also can show any widgets instead of an image type, such as Container, Text or a SVG,...
 
 
 ///.///////

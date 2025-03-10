@@ -3,9 +3,6 @@ import 'package:simple_gallery/simple_gallery.dart';
 
 import '../utils/image_utils.dart';
 
-const kGridItemPadding = 4.0;
-const kCrossAxisCount = 3;
-
 class NetworkImageGallery extends StatefulWidget {
   const NetworkImageGallery({super.key});
 
@@ -31,6 +28,12 @@ class _NetworkImageGalleryState extends State<NetworkImageGallery> {
           itemBuilder: (context, item, itemSize, viewSize) {
             return Image(image: item, fit: BoxFit.cover);
           },
+          placeholderBuilder: (context, item) {
+            return ColoredBox(
+              color: Colors.black38,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          },
           detailDecoration: DetailDecoration(
             backgroundWidget: ColoredBox(color: Colors.yellow),
             headerBuilder: _buildHeaderDetail,
@@ -39,6 +42,12 @@ class _NetworkImageGalleryState extends State<NetworkImageGallery> {
               return Image(image: item, fit: BoxFit.contain);
             },
             pageGap: 16,
+            placeholderBuilder: (context, item) {
+              return ColoredBox(
+                color: Colors.black38,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            },
           ),
         ),
       ),
@@ -51,7 +60,7 @@ class _NetworkImageGalleryState extends State<NetworkImageGallery> {
       child: Center(
         child: Text(
           'This is Footer',
-          style: TextStyle(fontSize: 35, color: Colors.white,),
+          style: TextStyle(fontSize: 35, color: Colors.white),
         ),
       ),
     );
@@ -79,4 +88,3 @@ class _NetworkImageGalleryState extends State<NetworkImageGallery> {
     );
   }
 }
-
