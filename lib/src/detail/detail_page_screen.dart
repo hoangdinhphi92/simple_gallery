@@ -112,6 +112,9 @@ class _DetailPageScreenState<T extends Object>
   set currentItem(T? value) {
     if (_currentItem != value && mounted) {
       _currentItem = value;
+      if (_currentItem != null) {
+        widget.onItemChanged?.call(currentItem!);
+      }
       setState(() {});
     }
   }

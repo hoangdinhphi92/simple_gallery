@@ -53,6 +53,7 @@ class _SimpleGalleryState<T extends Object> extends State<SimpleGallery<T>> {
   final ScrollController _controller = ScrollController();
 
   bool _detailShown = false;
+  Size _itemSize = Size.zero;
 
   DetailDecoration<T> get detailDecoration =>
       widget.detailDecoration ??
@@ -79,7 +80,10 @@ class _SimpleGalleryState<T extends Object> extends State<SimpleGallery<T>> {
         return SimpleItem<T>(
           item: item,
           itemSize: widget.itemSize,
-          itemBuilder: widget.itemBuilder,
+          itemBuilder: (context, item, itemSize, viewSize) {
+            _itemSize = viewSize;
+            return widget.itemBuilder(context, item, itemSize, viewSize);
+          },
           placeholderBuilder: widget.placeholderBuilder,
           onTap:
               (context, item, itemSize) => _openDetail(context, item, itemSize),
@@ -101,6 +105,18 @@ class _SimpleGalleryState<T extends Object> extends State<SimpleGallery<T>> {
         items: widget.items,
         onItemChanged: (value) {
           final index = widget.items.indexOf(value);
+          if (index != -1) {
+            final rowNumber = (index / widget.crossAxisCount).floor();
+
+            final itemHeight = _itemSize.height;
+            final spacingHeight = widget.mainAxisSpacing * rowNumber;
+            final totalOffset = (itemHeight * rowNumber) + spacingHeight;
+
+            final maxScrollExtent = _controller.position.maxScrollExtent;
+            final clampedOffset = totalOffset.clamp(0.0, maxScrollExtent);
+
+            _controller.jumpTo(clampedOffset);
+          }
         },
         decoration: detailDecoration,
       );
