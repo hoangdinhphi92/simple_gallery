@@ -37,7 +37,7 @@ import 'package:simple_gallery/simple_gallery.dart';
 
 For example, to show several images with paths:
 
-```dark
+```dart
   @override
   Widget build(BuildContext context) {
     return Scaffold(
