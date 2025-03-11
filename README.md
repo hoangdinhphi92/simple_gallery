@@ -6,7 +6,7 @@ It also can show any widgets instead of an image type, such as Container, Text o
 
 
 <p align="center">
-  ![Simple_Gallery Demo](demo_image/app_demo.gif "Simple Gallery Demo")
+<img src="demo_image/app_demo.gif" alt="Simple Gallery Demo" />
 </p>
 
 
@@ -79,7 +79,7 @@ Note:
 
 
 <p align="center">
-  ![Simple_Gallery Demo](demo_image/basic_usage_demo.gif "Simple Gallery Basic Demo")
+<img src="demo_image/basic_usage_demo.gif" alt="Simple Gallery Basic Demo" />
 </p>
 
 
@@ -237,7 +237,7 @@ Future<void> _getThumbnailFromAssets() async {
 ```
 
 <p align="center">
-  ![Simple_Gallery Demo](demo_image/image_and_video_gallery_demo.gif "NetworkImage Demo")
+<img src="demo_image/image_and_video_gallery_demo.gif" alt="Image & Video Gallery Demo" />
 </p>
 
 
@@ -284,7 +284,7 @@ Widget build(BuildContext context) {
 ```
 
 <p align="center">
-  ![Simple_Gallery Demo](demo_image/custom_gridview_image.png "Custom Gridview Demo")
+<img src="demo_image/custom_gridview_image.png" alt="Custom Gridview Demo" />
 </p>
 
 
@@ -353,7 +353,7 @@ List<NetworkImage> listNetworkImages = [
 ```
 
 <p align="center">
-  ![Simple_Gallery Demo](demo_image/custom_image_demo.gif "Custom widget in Gallery Demo")
+<img src="demo_image/custom_image_demo.gif" alt="Custom widget in Gallery Demo" />
 </p>
 
 
@@ -432,7 +432,7 @@ Widget _buildHeaderDetail(BuildContext context, NetworkImage image) {
 ```
 
 <p align="center">
-  ![Simple_Gallery Demo](demo_image/custom_header_footer.gif "Custom Detail Widget Demo")
+<img src="demo_image/custom_header_footer.gif" alt="Custom Detail Widget Demo" />
 </p>
 
 
