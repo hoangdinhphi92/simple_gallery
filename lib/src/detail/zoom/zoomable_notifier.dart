@@ -205,7 +205,9 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   }
 
   void onPointerUp(PointerUpEvent event) async {
-    _activePointers.remove(event.pointer);
+    if (_activePointers.remove(event.pointer) == null) {
+      return;
+    }
     _pointerUpEvents.add(event);
 
     _onPointerUp();
