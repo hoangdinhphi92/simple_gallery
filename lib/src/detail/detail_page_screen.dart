@@ -141,7 +141,7 @@ class _DetailPageScreenState<T extends Object>
     }
   }
 
-  ZoomableState _currentZoomState = ZoomableState.idle;
+  // ZoomableState _currentZoomState = ZoomableState.idle;
 
   @override
   void initState() {
@@ -203,7 +203,9 @@ class _DetailPageScreenState<T extends Object>
                   placeholderBuilder: widget.placeholderBuilder,
                   size: item == widget.curItem ? widget.currItemSize : null,
                   onTap: () {
-                    log("onTap");
+                    visibleHeader = !visibleHeader;
+                    userForceVisibleHeade = visibleHeader;
+                    log("onTap: $visibleHeader");
                   },
                 ),
               );
@@ -329,20 +331,13 @@ class _DetailPageScreenState<T extends Object>
       case ZoomableState.idle:
         visibleHeader = userForceVisibleHeade;
       case ZoomableState.zooming:
-        visibleHeader = false;
-      // case ZoomableState.doubleTap:
-      //   if (_currentZoomState == ZoomableState.zoomed) {
-      //     visibleHeader = userForceVisibleHeade;
-      //   } else if (_currentZoomState == ZoomableState.idle ||
-      //       _currentZoomState == ZoomableState.animating) {
-      //     visibleHeader = false;
-      //   }
+      case ZoomableState.animating:
       case ZoomableState.dragging:
         visibleHeader = false;
       default:
         break;
     }
-    _currentZoomState = notification.state;
+    // _currentZoomState = notification.state;
   }
 
   void _onOverScrollUpdate(

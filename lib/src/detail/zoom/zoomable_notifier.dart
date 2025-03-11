@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
@@ -241,6 +242,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     if (_detectDoubleTap()) {
       await _onDoubleTap(_pointerUpEvents.last.position);
       _pointerUpEvents.clear();
+    } else if (_detectTap()) {
+      await _handleTap();
     } else if (value.state == ZoomableState.dragging) {
       final fraction =
           (value.position - _initialDragPosition!).distance /
@@ -624,9 +627,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
         (lastPointerUpEvent.position - almostLastPointerUpEvent.position)
                 .distance <
             kDoubleTapDistance &&
-        (lastPointerUpEvent.timeStamp - almostLastPointerUpEvent.timeStamp)
-                .inMilliseconds <
-            kDoubleTapDurationInMs;
+        (lastPointerUpEvent.timeStamp - almostLastPointerUpEvent.timeStamp) <
+            kDoubleTapTimeout;
 
     return isDoubleTap;
   }
@@ -647,6 +649,14 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
             kTapDurationInMs;
 
     return isTap;
+  }
+
+  Future<void> _handleTap() async {
+    await Future.delayed(kDoubleTapTimeout);
+    if (!_detectDoubleTap()) {
+      onTap();
+      _pointerUpEvents.clear();
+    }
   }
 
   @override
