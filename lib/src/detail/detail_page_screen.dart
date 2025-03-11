@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src/detail/detail_decoration.dart';
 import 'package:simple_gallery/src/detail/detail_item_preview.dart';
@@ -124,14 +122,6 @@ class _DetailPageScreenState<T extends Object>
 
   PageController? _controller;
 
-  bool _userForceVisibleHeader = true;
-  bool get userForceVisibleHeade => _userForceVisibleHeader;
-  set userForceVisibleHeade(bool value) {
-    if (_userForceVisibleHeader != value && mounted) {
-      _userForceVisibleHeader = value;
-    }
-  }
-
   bool _visibleHeader = false;
   bool get visibleHeader => _visibleHeader;
   set visibleHeader(bool value) {
@@ -140,8 +130,6 @@ class _DetailPageScreenState<T extends Object>
       setState(() {});
     }
   }
-
-  // ZoomableState _currentZoomState = ZoomableState.idle;
 
   @override
   void initState() {
@@ -204,8 +192,6 @@ class _DetailPageScreenState<T extends Object>
                   size: item == widget.curItem ? widget.currItemSize : null,
                   onTap: () {
                     visibleHeader = !visibleHeader;
-                    userForceVisibleHeade = visibleHeader;
-                    log("onTap: $visibleHeader");
                   },
                 ),
               );
@@ -238,7 +224,11 @@ class _DetailPageScreenState<T extends Object>
   }
 
   Widget _buildFooter(BuildContext context, PageController controller) {
-    if (widget.footerBuilder != null && currentItem != null) {
+    if (currentItem == null) {
+      return const SizedBox.shrink();
+    }
+
+    if (widget.footerBuilder != null) {
       return widget.footerBuilder!.call(
         context,
         widget.items,
@@ -248,7 +238,8 @@ class _DetailPageScreenState<T extends Object>
     }
 
     return DetailDefaultFooter(
-      totalPage: widget.items.length,
+      items: widget.items,
+      currentItem: currentItem,
       pageController: controller,
     );
   }
@@ -328,16 +319,13 @@ class _DetailPageScreenState<T extends Object>
 
   void _onZoomStateUpdate(ZoomStateUpdateNotification notification) {
     switch (notification.state) {
-      case ZoomableState.idle:
-        visibleHeader = userForceVisibleHeade;
-      case ZoomableState.zooming:
       case ZoomableState.animating:
+      case ZoomableState.zooming:
       case ZoomableState.dragging:
         visibleHeader = false;
       default:
         break;
     }
-    // _currentZoomState = notification.state;
   }
 
   void _onOverScrollUpdate(

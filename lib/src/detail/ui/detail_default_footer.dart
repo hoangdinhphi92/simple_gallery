@@ -1,39 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:simple_gallery/src/detail/detail_page_screen.dart';
 
-class DetailDefaultFooter<T> extends StatefulWidget {
-  final int totalPage;
+class DetailDefaultFooter<T> extends StatelessWidget {
+  final List<T> items;
+  final T currentItem;
   final PageController pageController;
+
+  int get totalPage => items.length;
+  int get currentPageIndex => items.indexOf(currentItem);
 
   const DetailDefaultFooter({
     super.key,
-    required this.totalPage,
     required this.pageController,
+    required this.items,
+    required this.currentItem,
   });
 
-  @override
-  State<DetailDefaultFooter<T>> createState() => _DetailDefaultFooterState<T>();
-}
-
-class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
-  int _currentPage = 0;
-  int get currentPage => this._currentPage;
-
-  set currentPage(int value) {
-    if (this._currentPage != value) {
-      this._currentPage = value;
-      setState(() {});
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    widget.pageController.addListener(_onPageChanged);
-    _currentPage = widget.pageController.initialPage;
-  }
-
+  // int get totalPage => widget.items.length;
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
@@ -50,9 +33,9 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  if (widget.totalPage > 1) _buildPreviousButton(),
+                  if (totalPage > 1) _buildPreviousButton(),
                   _buildPageIndex(),
-                  if (widget.totalPage > 1) _buildNextButton(),
+                  if (totalPage > 1) _buildNextButton(),
                 ],
               ),
             ),
@@ -63,7 +46,7 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
   }
 
   Widget _buildPageIndex() {
-    if (currentPage == -1) return const SizedBox.shrink();
+    if (currentPageIndex == -1) return const SizedBox.shrink();
 
     return SizedBox(
       height: 48,
@@ -71,7 +54,7 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
         child: Material(
           color: Colors.transparent,
           child: Text(
-            "${currentPage + 1}/${widget.totalPage}",
+            "${currentPageIndex + 1}/$totalPage",
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
           ),
         ),
@@ -80,7 +63,7 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
   }
 
   Widget _buildNextButton() {
-    final isLastPage = currentPage >= widget.totalPage - 1;
+    final isLastPage = currentPageIndex >= totalPage - 1;
     return SizedBox(
       width: 48,
       height: 48,
@@ -89,7 +72,7 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
             isLastPage
                 ? null
                 : () {
-                  widget.pageController.nextPage(
+                  pageController.nextPage(
                     duration: kNextPageDuration,
                     curve: Curves.decelerate,
                   );
@@ -100,7 +83,7 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
   }
 
   Widget _buildPreviousButton() {
-    final isFirstPage = currentPage <= 0;
+    final isFirstPage = currentPageIndex <= 0;
 
     return SizedBox(
       width: 48,
@@ -110,7 +93,7 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
             isFirstPage
                 ? null
                 : () {
-                  widget.pageController.previousPage(
+                  pageController.previousPage(
                     duration: kNextPageDuration,
                     curve: Curves.decelerate,
                   );
@@ -118,18 +101,5 @@ class _DetailDefaultFooterState<T> extends State<DetailDefaultFooter<T>> {
         icon: Icon(Icons.arrow_back_rounded),
       ),
     );
-  }
-
-  void _onPageChanged() {
-    final page = widget.pageController.page;
-    if (page == null) return;
-
-    currentPage = page.round();
-  }
-
-  @override
-  void dispose() {
-    widget.pageController.removeListener(_onPageChanged);
-    super.dispose();
   }
 }

@@ -10,9 +10,9 @@ const kZoomAnimationDuration = Duration(milliseconds: 150);
 const kFlingAnimationDuration = Duration(milliseconds: 500);
 const kDragAnimationDuration = Duration(milliseconds: 250);
 const kDoubleTapDistance = 50;
-const kDoubleTapDurationInMs = 200;
-const kTapDistance = 50;
-const kTapDurationInMs = 200;
+const kDoubleTapDurationTimeout = Duration(milliseconds: 200);
+const kTapDistance = 1;
+const kTapDurationTimeout = Duration(milliseconds: 100);
 const kOneSecondInMs = 1000;
 
 enum ZoomableState {
@@ -239,10 +239,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   void _onReleaseFinger() async {
     final pixelsPerSecond = _velocityTracker.getVelocity().pixelsPerSecond;
 
-    if (_detectDoubleTap()) {
+    if (_isDoubleTap()) {
       await _onDoubleTap(_pointerUpEvents.last.position);
       _pointerUpEvents.clear();
-    } else if (_detectTap()) {
+    } else if (_isTapped()) {
       await _handleTap();
     } else if (value.state == ZoomableState.dragging) {
       final fraction =
@@ -616,7 +616,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     DragEndNotification(popBack).dispatch(context);
   }
 
-  bool _detectDoubleTap() {
+  bool _isDoubleTap() {
     if (_pointerUpEvents.length < 2) return false;
 
     final lastPointerUpEvent = _pointerUpEvents.last;
@@ -628,12 +628,12 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
                 .distance <
             kDoubleTapDistance &&
         (lastPointerUpEvent.timeStamp - almostLastPointerUpEvent.timeStamp) <
-            kDoubleTapTimeout;
+            kDoubleTapDurationTimeout;
 
     return isDoubleTap;
   }
 
-  bool _detectTap() {
+  bool _isTapped() {
     final lastPointerDownEvent = _lastPointerDownEvent;
     final lastPointerUpEvent = _pointerUpEvents.lastOrNull;
 
@@ -641,19 +641,22 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       return false;
     }
 
+    if (lastPointerUpEvent.pointer != lastPointerDownEvent.pointer) {
+      return false;
+    }
+
     final isTap =
         (lastPointerDownEvent.position - lastPointerUpEvent.position).distance <
             kTapDistance &&
-        (lastPointerUpEvent.timeStamp - lastPointerDownEvent.timeStamp)
-                .inMilliseconds <
-            kTapDurationInMs;
+        (lastPointerUpEvent.timeStamp - lastPointerDownEvent.timeStamp) <
+            kTapDurationTimeout;
 
     return isTap;
   }
 
   Future<void> _handleTap() async {
-    await Future.delayed(kDoubleTapTimeout);
-    if (!_detectDoubleTap()) {
+    await Future.delayed(kDoubleTapDurationTimeout);
+    if (!_isDoubleTap()) {
       onTap();
       _pointerUpEvents.clear();
     }
