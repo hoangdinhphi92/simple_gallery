@@ -1,8 +1,8 @@
 # simple_gallery
 
-An easy way to display images as a gallery in full-screen with Hero animation, including pinch, zoom, drag & double tap to zoom.
+An easy way to display widgets as a gallery in full-screen with Hero animation, including pinch, zoom, drag & double tap to zoom.
 
-It also can show any widgets instead of an image type, such as Container, Text or a SVG,...
+It also can show any widgets instead of an image type, such as Container, Text, a SVG or Video,...
 
 
 <p align="center">
@@ -21,7 +21,7 @@ import 'package:simple_gallery/simple_gallery.dart';
 
 ## Features
 
-* Show a list of images(widgets) in GridView (Allow to custom the GridView properties)
+* Show a list of widgets in GridView (Allow to custom the GridView properties)
 * Allow to custom each item in GridView  using `itemBuilder`
 * By clicking to GridView item to show each detail widget in full-screen in a PageView
 * Allow to custom the detail widget using `detailDecoration`
