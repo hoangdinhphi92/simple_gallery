@@ -2,7 +2,20 @@
 
 An easy way to display widgets as a gallery in full-screen with Hero animation, including pinch, zoom, drag & double tap to zoom.
 
-It also can show any widgets instead of an image type, such as Container, Text, a SVG or Video,...
+It also can show any widgets, such as Image, Container, Text, a SVG or Video,...
+
+## Features
+
+* Show a list of widgets in GridView (Allow to custom the GridView properties)
+* Allow to custom each item in GridView  using `itemBuilder`
+* By clicking to GridView item to show each detail widget in full-screen in a PageView
+* Allow to custom the detail widget using `detailDecoration`
+* Use pinch & zoom to zoom in and out of images(widgets)
+* Enable to drag up & down the detail widget with opacity background to back to GridView with Hero animation
+* Allow to scroll with page snap to view each detail widget in PageView
+* Fully customizable loading/progress indicator
+* Allow double tapping to zoom
+* No dependencies besides Flutter
 
 
 <p align="center">
@@ -18,19 +31,6 @@ Import Simple Gallery:
 ```dart
 import 'package:simple_gallery/simple_gallery.dart';
 ```
-
-## Features
-
-* Show a list of widgets in GridView (Allow to custom the GridView properties)
-* Allow to custom each item in GridView  using `itemBuilder`
-* By clicking to GridView item to show each detail widget in full-screen in a PageView
-* Allow to custom the detail widget using `detailDecoration`
-* Use pinch & zoom to zoom in and out of images(widgets)
-* Enable to drag up & down the detail widget with opacity background to back to GridView with Hero animation
-* Allow to scroll with page snap to view each detail widget in PageView
-* Fully customizable loading/progress indicator
-* Allow double tapping to zoom
-* No dependencies besides Flutter
 
 
 ## Basic usage
@@ -288,78 +288,9 @@ Widget build(BuildContext context) {
 </p>
 
 
-Allow to custom each item in Gallery using `itemBuilder` & `detailBuilder`:
-
-```dart
-List<NetworkImage> listNetworkImages = [
-    const NetworkImage("https://picsum.photos/id/1001/4912/3264"),
-    const NetworkImage("https://picsum.photos/id/1003/1181/1772"),
-    const NetworkImage("https://picsum.photos/id/1004/4912/3264"),
-    const NetworkImage("https://picsum.photos/id/1005/4912/3264"),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: SimpleGallery<NetworkImage>(
-          items: listNetworkImages,
-          itemSize: (item) => getNetworkImageSize(item.url.toString()),
-          placeholderBuilder: (context, item) {
-            return ColoredBox(
-              color: Colors.black38,
-              child: Center(child: CircularProgressIndicator()),
-            );
-          },
-          itemBuilder: (context, item, itemSize, viewSize) {
-            return Stack(
-              children: [
-                Positioned.fill(child: Image(image: item, fit: BoxFit.cover)),
-                Positioned(
-                  bottom: 5,
-                  right: 5,
-                  child: Icon(Icons.favorite, color: Colors.pink),
-                ),
-              ],
-            );
-          },
-          detailDecoration: DetailDecoration(
-            detailBuilder: (context, item, itemSize, viewSize) {
-              return Stack(
-                children: [
-                  Positioned.fill(
-                    child: Image(image: item, fit: BoxFit.contain),
-                  ),
-                  Positioned(
-                    bottom: 5,
-                    right: 5,
-                    child: Icon(Icons.favorite, color: Colors.pink),
-                  ),
-                ],
-              );
-            },
-            placeholderBuilder: (context, item) {
-              return ColoredBox(
-                color: Colors.black38,
-                child: Center(child: CircularProgressIndicator()),
-              );
-            },
-            pageGap: 16,
-          ),
-        ),
-      ),
-    );
-  }
-```
-
-<p align="center">
-<img src="demo_image/custom_image_demo.gif" alt="Custom widget in Gallery Demo" />
-</p>
-
-
 ## Custom the placeHolder,header & footer in detail screen
 
-Using `detailDecoration` to custom the background,placeHolder,header & footer for detail widget in PageView
+Using `detailDecoration` to custom the background, placeHolder, header & footer for detail widget in PageView
 
 ```dart
   @override
