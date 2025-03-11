@@ -8,6 +8,7 @@ class DetailItemPreview<T extends Object> extends StatefulWidget {
   final ItemSize<T> itemSize;
   final ItemBuilder<T> itemBuilder;
   final PlaceholderBuilder<T>? placeholderBuilder;
+  final VoidCallback onTap;
 
   const DetailItemPreview({
     super.key,
@@ -16,6 +17,7 @@ class DetailItemPreview<T extends Object> extends StatefulWidget {
     required this.itemSize,
     required this.itemBuilder,
     this.placeholderBuilder,
+    required this.onTap,
   });
 
   @override
@@ -58,6 +60,7 @@ class _DetailItemPreviewState<T extends Object>
           (context, constraints) => ZoomablePreview(
             viewSize: constraints.biggest,
             childSize: size,
+            onTap: widget.onTap,
             child: Hero(
               tag: widget.item,
               flightShuttleBuilder: _buildFlightShuttle,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
@@ -8,11 +9,16 @@ import 'package:simple_gallery/src/detail/zoom/zoomable_notification.dart';
 const kZoomAnimationDuration = Duration(milliseconds: 150);
 const kFlingAnimationDuration = Duration(milliseconds: 500);
 const kDragAnimationDuration = Duration(milliseconds: 250);
+const kDoubleTapDistance = 50;
+const kDoubleTapDurationTimeout = Duration(milliseconds: 200);
+const kTapDistance = 1;
+const kTapDurationTimeout = Duration(milliseconds: 100);
 const kOneSecondInMs = 1000;
 
 enum ZoomableState {
   idle,
   zooming,
+  zoomed,
   moving,
   animating,
   movingPage,
@@ -109,10 +115,13 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     PointerDeviceKind.touch,
   );
 
+  final VoidCallback onTap;
+
   ZoomableNotifier({
     required this.context,
     required Size childSize,
     required Size viewSize,
+    required this.onTap,
   }) : super(ZoomableValue.from(viewSize, childSize));
 
   @override
@@ -128,12 +137,15 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   double? _initialScaleDistance;
   Offset? _lastFocalPoint;
   Offset? _initialDragPosition;
+  final List<PointerUpEvent> _pointerUpEvents = [];
+  PointerDownEvent? _lastPointerDownEvent;
 
   void onPointerDown(PointerDownEvent event) {
     if (_activePointers.length == 2 ||
         value.state == ZoomableState.movingPage) {
       return;
     }
+    _lastPointerDownEvent = event;
     _activePointers[event.pointer] = event.position;
 
     // If we have exactly 2 pointers, we'll start zooming
@@ -193,6 +205,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   void onPointerUp(PointerUpEvent event) async {
     _activePointers.remove(event.pointer);
+    _pointerUpEvents.add(event);
+
     _onPointerUp();
   }
 
@@ -225,7 +239,12 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   void _onReleaseFinger() async {
     final pixelsPerSecond = _velocityTracker.getVelocity().pixelsPerSecond;
 
-    if (value.state == ZoomableState.dragging) {
+    if (_isDoubleTap()) {
+      await _onDoubleTap(_pointerUpEvents.last.position);
+      _pointerUpEvents.clear();
+    } else if (_isTapped()) {
+      await _handleTap();
+    } else if (value.state == ZoomableState.dragging) {
       final fraction =
           (value.position - _initialDragPosition!).distance /
           (value.viewSize.shortestSide / 2);
@@ -237,16 +256,66 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       }
     } else if (value.state == ZoomableState.movingPage) {
       _sendOverScrollEndNotification(pixelsPerSecond.dx);
-    } else if (pixelsPerSecond != Offset.zero) {
+    } else if (pixelsPerSecond != Offset.zero &&
+        value.scale > value.initScale) {
       await _fling(pixelsPerSecond);
     } else {
       await _validatePositionAndScale();
     }
 
-    value = value.copyWith(state: ZoomableState.idle);
+    value = value.copyWith(
+      state:
+          value.scale != value.initScale
+              ? ZoomableState.zoomed
+              : ZoomableState.idle,
+    );
     _initialScaleDistance = null;
     _lastFocalPoint = null;
     _initialDragPosition = null;
+  }
+
+  Future<void> _onDoubleTap(Offset position) async {
+    final isZoomed = value.scale != value.initScale;
+
+    if (isZoomed) {
+      await _animateToValue(
+        value.initScale,
+        _calcValidPosition(scale: value.initScale),
+      );
+    } else {
+      // calc new scale value
+      var newScale = 0.0;
+      final scaledWidth = value.childSize.width * value.initScale;
+      final scaledHeight = value.childSize.height * value.initScale;
+
+      if (value.viewSize.aspectRatio > value.childSize.aspectRatio) {
+        // new scale to fit width
+        newScale = value.initScale * value.viewSize.width / scaledWidth;
+      } else if (value.viewSize.aspectRatio < value.childSize.aspectRatio) {
+        // new scale to fit height
+        newScale = value.initScale * value.viewSize.height / scaledHeight;
+      } else {
+        newScale = value.initScale * 2;
+      }
+
+      // calc new position
+      final screenCenter = Offset(
+        value.viewSize.width / 2,
+        value.viewSize.height / 2,
+      );
+
+      // Convert touch position to widget coordinates at initial scale
+      final widgetTouchPoint = (position - value.position) / value.scale;
+
+      // Calculate new position to center the touched point
+      var newPosition = screenCenter - widgetTouchPoint * newScale;
+
+      // // Create constrained position
+      newPosition = _calcValidPosition(scale: newScale, position: newPosition);
+
+      // Animate to new scale and position
+      await _animateToValue(newScale, newPosition);
+    }
   }
 
   // Helper method to calculate distance between pointers
@@ -347,13 +416,20 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     return _animateFling(newPosition);
   }
 
-  Offset _calcValidPosition({Offset pixelsPerSecond = Offset.zero}) {
-    final newScale = value.scale.clamp(value.initScale, value.maxScale);
+  Offset _calcValidPosition({
+    Offset pixelsPerSecond = Offset.zero,
+    double? scale,
+    Offset? position,
+  }) {
+    final newScale =
+        scale ?? value.scale.clamp(value.initScale, value.maxScale);
 
     final scaledWidth = value.childSize.width * newScale;
     final scaledHeight = value.childSize.height * newScale;
 
     double newX, newY;
+
+    final newPosition = position ?? value.position;
 
     // Handle x-axis
     if (scaledWidth <= value.viewSize.width) {
@@ -361,7 +437,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       newX = (value.viewSize.width - scaledWidth) / 2;
     } else {
       // Constrain if it exceeds
-      var dx = value.position.dx;
+      var dx = newPosition.dx;
       if (pixelsPerSecond.dx.abs() > kMinFlingVelocity) {
         dx =
             dx +
@@ -382,7 +458,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     } else {
       // Constrain if it exceeds
 
-      var dy = value.position.dy;
+      var dy = newPosition.dy;
       if (pixelsPerSecond.dy.abs() > kMinFlingVelocity) {
         dy =
             dy +
@@ -422,7 +498,9 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
     // Update position if there's a change
     final isDragging =
-        newY == value.position.dy && delta.dy.abs() > delta.dx.abs();
+        newY == value.position.dy &&
+        delta.dy > 0 &&
+        delta.dy.abs() > delta.dx.abs();
 
     final isMovingPage =
         (newX == value.position.dx &&
@@ -536,6 +614,52 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   void _sendDragEndNotification(bool popBack) {
     DragEndNotification(popBack).dispatch(context);
+  }
+
+  bool _isDoubleTap() {
+    if (_pointerUpEvents.length < 2) return false;
+
+    final lastPointerUpEvent = _pointerUpEvents.last;
+    final almostLastPointerUpEvent =
+        _pointerUpEvents[_pointerUpEvents.length - 2];
+
+    final isDoubleTap =
+        (lastPointerUpEvent.position - almostLastPointerUpEvent.position)
+                .distance <
+            kDoubleTapDistance &&
+        (lastPointerUpEvent.timeStamp - almostLastPointerUpEvent.timeStamp) <
+            kDoubleTapDurationTimeout;
+
+    return isDoubleTap;
+  }
+
+  bool _isTapped() {
+    final lastPointerDownEvent = _lastPointerDownEvent;
+    final lastPointerUpEvent = _pointerUpEvents.lastOrNull;
+
+    if (lastPointerDownEvent == null || lastPointerUpEvent == null) {
+      return false;
+    }
+
+    if (lastPointerUpEvent.pointer != lastPointerDownEvent.pointer) {
+      return false;
+    }
+
+    final isTap =
+        (lastPointerDownEvent.position - lastPointerUpEvent.position).distance <
+            kTapDistance &&
+        (lastPointerUpEvent.timeStamp - lastPointerDownEvent.timeStamp) <
+            kTapDurationTimeout;
+
+    return isTap;
+  }
+
+  Future<void> _handleTap() async {
+    await Future.delayed(kDoubleTapDurationTimeout);
+    if (!_isDoubleTap()) {
+      onTap();
+      _pointerUpEvents.clear();
+    }
   }
 
   @override

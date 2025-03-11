@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:simple_gallery/src/detail/detail_decoration.dart';
 import 'package:simple_gallery/src/detail/detail_page_screen.dart';
 import 'package:simple_gallery/src/gallery/simple_item.dart';
+import 'package:simple_gallery/src/helper/grid_view_scroll_offset_calculator.dart';
+import 'package:simple_gallery/src/helper/scroll_offset_calculator.dart';
 
 /// ItemBuilder is a function that builds a widget for the given item.
-typedef PlaceholderBuilder<T extends Object> = Widget Function(BuildContext context, T item);
+typedef PlaceholderBuilder<T extends Object> =
+    Widget Function(BuildContext context, T item);
 
 /// ItemBuilder is a function that builds a widget for the given item.
 typedef ItemBuilder<T extends Object> =
@@ -61,28 +64,61 @@ class _SimpleGalleryState<T extends Object> extends State<SimpleGallery<T>> {
         placeholderBuilder: widget.placeholderBuilder,
       );
 
+  ScrollOffsetCalculator? _scrollOffsetCalculator;
+
+  @override
+  void didUpdateWidget(SimpleGallery<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Check if any of the grid properties have changed
+    if (oldWidget.crossAxisCount != widget.crossAxisCount ||
+        oldWidget.crossAxisSpacing != widget.crossAxisSpacing ||
+        oldWidget.mainAxisSpacing != widget.mainAxisSpacing ||
+        oldWidget.childAspectRatio != widget.childAspectRatio ||
+        oldWidget.padding != widget.padding) {
+      _scrollOffsetCalculator = null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      controller: _controller,
-      scrollDirection: Axis.vertical,
-      padding: widget.padding,
-      itemCount: widget.items.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: widget.crossAxisCount,
-        childAspectRatio: widget.childAspectRatio,
-        crossAxisSpacing: widget.crossAxisSpacing,
-        mainAxisSpacing: widget.mainAxisSpacing,
-      ),
-      itemBuilder: (context, index) {
-        final item = widget.items[index];
-        return SimpleItem<T>(
-          item: item,
-          itemSize: widget.itemSize,
-          itemBuilder: widget.itemBuilder,
-          placeholderBuilder: widget.placeholderBuilder,
-          onTap:
-              (context, item, itemSize) => _openDetail(context, item, itemSize),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _scrollOffsetCalculator ??= GridViewScrollOffsetCalculator(
+          viewport: constraints.biggest,
+          scrollDirection: Axis.vertical,
+          padding: widget.padding,
+          crossAxisCount: widget.crossAxisCount,
+          crossAxisSpacing: widget.crossAxisSpacing,
+          mainAxisSpacing: widget.mainAxisSpacing,
+          childAspectRatio: widget.childAspectRatio,
+        );
+
+        return GridView.builder(
+          controller: _controller,
+          scrollDirection: Axis.vertical,
+          padding: widget.padding,
+          itemCount: widget.items.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: widget.crossAxisCount,
+            childAspectRatio: widget.childAspectRatio,
+            crossAxisSpacing: widget.crossAxisSpacing,
+            mainAxisSpacing: widget.mainAxisSpacing,
+          ),
+          itemBuilder: (context, index) {
+            final item = widget.items[index];
+            return SimpleItem<T>(
+              item: item,
+              itemSize: widget.itemSize,
+              itemBuilder: (context, item, itemSize, viewSize) {
+                return widget.itemBuilder(context, item, itemSize, viewSize);
+              },
+              placeholderBuilder: widget.placeholderBuilder,
+              onTap:
+                  (context, item, itemSize) =>
+                      _openDetail(context, item, itemSize),
+            );
+          },
         );
       },
     );
@@ -101,6 +137,14 @@ class _SimpleGalleryState<T extends Object> extends State<SimpleGallery<T>> {
         items: widget.items,
         onItemChanged: (value) {
           final index = widget.items.indexOf(value);
+          if (index != -1) {
+            final scrollPosition = _scrollOffsetCalculator
+                ?.calcScrollOffsetAtIndex(index);
+
+            if (scrollPosition != null) {
+              _controller.jumpTo(scrollPosition);
+            }
+          }
         },
         decoration: detailDecoration,
       );
