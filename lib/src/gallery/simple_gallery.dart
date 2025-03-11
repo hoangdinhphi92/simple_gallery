@@ -14,21 +14,40 @@ typedef ItemBuilder<T extends Object> =
 typedef ItemSize<T extends Object> = Future<Size> Function(T item);
 
 class SimpleGallery<T extends Object> extends StatefulWidget {
+
+  /// A list of items to be displayed in the gallery.
   final List<T> items;
+
+  /// [itemSize] is a function that returns the size of the given item.
   final ItemSize<T> itemSize;
+
+  /// ItemBuilder is a function that builds a widget for the given item.
   final ItemBuilder<T> itemBuilder;
+
+  /// [placeholderBuilder] will be called only when the size of item is null
   final PlaceholderBuilder<T>? placeholderBuilder;
 
-  // Grid layout properties
+  /// The number of children in the cross axis. Default is 3.
   final int crossAxisCount;
+
+  /// The number of logical pixels between each child along the cross axis.
+  /// Default is 4.0.
   final double crossAxisSpacing;
+
+  /// The number of logical pixels between each child along the main axis.
+  /// Default is 4.0.
   final double mainAxisSpacing;
+
+  /// The ratio of the cross-axis to the main-axis extent of each child.
+  /// Default is 1.0.
   final double childAspectRatio;
 
-  // Padding around the grid
+  /// The amount of space by which to inset the children.
+  /// Default is EdgeInsets.all(4.0).
   final EdgeInsets padding;
 
-  // Detail decoration properties
+  /// Detail decoration properties
+  /// Specifies additional styling or decorations for item details.
   final DetailDecoration<T>? detailDecoration;
 
   const SimpleGallery({

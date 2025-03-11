@@ -4,8 +4,11 @@ import 'package:simple_gallery/simple_gallery.dart';
 typedef DetailActionBuilder<T extends Object> = Widget Function(BuildContext context, T item);
 
 class DetailDecoration<T extends Object> {
+
+  /// A function that builds the widget for each detail item.
   final ItemBuilder<T> detailBuilder;
 
+  /// A function that provides a placeholder when the item size is null.
   final PlaceholderBuilder<T>? placeholderBuilder;
 
   /// Builder for the header widget (e.g., title, close button).
