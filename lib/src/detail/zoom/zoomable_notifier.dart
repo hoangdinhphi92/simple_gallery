@@ -142,7 +142,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   void onPointerDown(PointerDownEvent event) {
     if (_activePointers.length == 2 ||
-        value.state == ZoomableState.movingPage) {
+        value.state == ZoomableState.movingPage ||
+        value.state == ZoomableState.dragging) {
       return;
     }
     _lastPointerDownEvent = event;
@@ -204,7 +205,9 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   }
 
   void onPointerUp(PointerUpEvent event) async {
-    _activePointers.remove(event.pointer);
+    if (_activePointers.remove(event.pointer) == null) {
+      return;
+    }
     _pointerUpEvents.add(event);
 
     _onPointerUp();
@@ -288,10 +291,18 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       final scaledWidth = value.childSize.width * value.initScale;
       final scaledHeight = value.childSize.height * value.initScale;
 
-      if (value.viewSize.aspectRatio > value.childSize.aspectRatio) {
+      final viewRatio = double.parse(
+        value.viewSize.aspectRatio.toStringAsFixed(3),
+      );
+
+      final childRatio = double.parse(
+        value.childSize.aspectRatio.toStringAsFixed(3),
+      );
+
+      if (viewRatio > childRatio) {
         // new scale to fit width
         newScale = value.initScale * value.viewSize.width / scaledWidth;
-      } else if (value.viewSize.aspectRatio < value.childSize.aspectRatio) {
+      } else if (viewRatio < childRatio) {
         // new scale to fit height
         newScale = value.initScale * value.viewSize.height / scaledHeight;
       } else {

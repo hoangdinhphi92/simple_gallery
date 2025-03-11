@@ -39,7 +39,7 @@ Future<dynamic> showDetailPage<T extends Object>({
           headerBuilder: decoration.headerBuilder,
           footerBuilder: decoration.footerBuilder,
           pageGap: decoration.pageGap,
-          backgroundWidget: decoration.backgroundWidget,
+          backgroundBuilder: decoration.backgroundBuilder,
         );
       },
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -74,7 +74,7 @@ class DetailPageScreen<T extends Object> extends StatefulWidget {
   final double pageGap;
 
   /// Optional background widget for the detail screen.
-  final Widget? backgroundWidget;
+  final BackgroundBuilder? backgroundBuilder;
 
   const DetailPageScreen({
     super.key,
@@ -88,7 +88,7 @@ class DetailPageScreen<T extends Object> extends StatefulWidget {
     this.headerBuilder,
     this.footerBuilder,
     required this.pageGap,
-    this.backgroundWidget,
+    this.backgroundBuilder,
   });
 
   @override
@@ -206,7 +206,9 @@ class _DetailPageScreenState<T extends Object>
     return AnimatedOpacity(
       duration: kDragAnimationDuration,
       opacity: _backgroundOpacity,
-      child: widget.backgroundWidget ?? ColoredBox(color: Colors.white),
+      child:
+          widget.backgroundBuilder?.call(context) ??
+          ColoredBox(color: Colors.white),
     );
   }
 

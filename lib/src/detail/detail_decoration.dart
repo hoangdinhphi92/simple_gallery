@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:simple_gallery/simple_gallery.dart';
 import 'package:simple_gallery/src/detail/detail_page_screen.dart';
 
+typedef BackgroundBuilder = Widget? Function(BuildContext context);
+
 class DetailDecoration<T extends Object> {
   final ItemBuilder<T> detailBuilder;
 
@@ -17,7 +19,7 @@ class DetailDecoration<T extends Object> {
   final double pageGap;
 
   /// Optional background widget for the detail screen.
-  final Widget? backgroundWidget;
+  final BackgroundBuilder? backgroundBuilder;
 
   DetailDecoration({
     required this.detailBuilder,
@@ -25,6 +27,6 @@ class DetailDecoration<T extends Object> {
     this.headerBuilder,
     this.footerBuilder,
     this.pageGap = 0.0,
-    this.backgroundWidget,
+    this.backgroundBuilder,
   });
 }
