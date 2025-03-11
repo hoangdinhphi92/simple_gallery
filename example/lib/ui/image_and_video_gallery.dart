@@ -43,7 +43,7 @@ class _ImageAndVideoGalleryState
     _getThumbnailFromAssets();
 
     for (var e in listNetworkImages) {
-      listGalleryObject.add(ImageObject(type: ImageType.network, path: e));
+      listGalleryObject.add(ImageObject(type: ImageType.image, path: e));
     }
   }
 
@@ -177,7 +177,7 @@ class _ImageAndVideoGalleryState
   }
 }
 
-enum ImageType { local, network, video }
+enum ImageType { image, video }
 
 class ImageObject {
   final ImageType type;
