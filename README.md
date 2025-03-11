@@ -78,52 +78,160 @@ Note: `itemSize` is the size of image, it is required for Hero animation and cac
 ![Simple_Gallery Demo](demo_image/basic_usage_demo.gif "Simple Gallery Basic Demo")
 
 
-## Show difference type of image
+## Show difference type of widget
 
 You can use any types for gallery (SimpleGallery<YourType>) and custom the way that the content in both Gridview and PageView is displayed using `itemBuilder` & `detailBuilder`
-This example is using NetworkImage:
+This example is using custom class to display both image and video in gallery:
 
 ```dart
-  List<NetworkImage> listNetworkImages = [
-  const NetworkImage("https://picsum.photos/id/1001/4912/3264"),
-  const NetworkImage("https://picsum.photos/id/1003/1181/1772"),
-  const NetworkImage("https://picsum.photos/id/1004/4912/3264"),
-  const NetworkImage("https://picsum.photos/id/1005/4912/3264")
+  final asset = "assets/video.mp4";
+
+List<String> listNetworkImages = [
+  "https://picsum.photos/id/1001/4912/3264",
+  "https://picsum.photos/id/1003/1181/1772",
+  "https://picsum.photos/id/1004/4912/3264",
+  "https://picsum.photos/id/1005/4912/3264",
 ];
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SimpleGallery<NetworkImage>(
-        items: listNetworkImages,
-        itemSize: (item) => getImageSize(item),
+Uint8List? videoThumbnail;
+late VideoPlayerController controller;
+
+List<ImageObject> listGalleryObject = [];
+
+@override
+void initState() {
+  super.initState();
+  _getThumbnailFromAssets();
+
+  for (var e in listNetworkImages) {
+    listGalleryObject.add(ImageObject(type: ImageType.network, path: e));
+  }
+
+  controller = VideoPlayerController.asset(asset);
+}
+
+@override
+void dispose() {
+  controller.dispose();
+  super.dispose();
+}
+
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: SafeArea(
+      child: SimpleGallery<ImageObject>(
+        items: listGalleryObject,
+        itemSize:
+            (item) =>
+        item.type == ImageType.video
+            ? getImageSizeFromBytes(item.bytes!)
+            : getNetworkImageSize(item.path),
+        itemBuilder: (context, item, itemSize, viewSize) {
+          final itemType = item.type;
+          if (itemType == ImageType.video) {
+            return videoThumbnail != null
+                ? Image.memory(videoThumbnail!, fit: BoxFit.cover)
+                : CircularProgressIndicator();
+          } else {
+            return Image.network(
+              item.path,
+              fit: BoxFit.cover,
+              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                if (wasSynchronouslyLoaded || frame != null) {
+                  return child;
+                }
+                return Center(
+                  child: ColoredBox(
+                    color: Colors.black38,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                );
+              },
+            );
+          }
+        },
         placeholderBuilder: (context, item) {
           return ColoredBox(
             color: Colors.black38,
             child: Center(child: CircularProgressIndicator()),
           );
         },
-        itemBuilder: (context, item, itemSize, viewSize) {
-          return Image(image: item, fit: BoxFit.cover,);
-        },
         detailDecoration: DetailDecoration(
-          detailBuilder: (context, item, itemSize, viewSize) {
-            return Image(image: item, fit: BoxFit.contain);
-          },
           placeholderBuilder: (context, item) {
             return ColoredBox(
               color: Colors.black38,
               child: Center(child: CircularProgressIndicator()),
             );
           },
+          detailBuilder: (context, item, itemSize, viewSize) {
+            final itemType = item.type;
+            if (itemType == ImageType.video) {
+              return controller.value.isInitialized
+                  ? AspectRatio(
+                aspectRatio: controller.value.aspectRatio,
+                child: VideoPlayer(controller),
+              )
+                  : Center(child: CircularProgressIndicator());
+            } else {
+              return Image.network(
+                item.path,
+                fit: BoxFit.contain,
+                frameBuilder: (
+                    context,
+                    child,
+                    frame,
+                    wasSynchronouslyLoaded,
+                    ) {
+                  if (wasSynchronouslyLoaded || frame != null) {
+                    return child;
+                  }
+                  return Center(
+                    child: ColoredBox(
+                      color: Colors.black38,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  );
+                },
+              );
+            }
+          },
           pageGap: 16,
         ),
       ),
+    ),
+  );
+}
+
+Future<void> _getThumbnailFromAssets() async {
+  final byteData = await rootBundle.load(asset);
+  Directory tempDir = await getTemporaryDirectory();
+
+  File tempVideo =
+  File("${tempDir.path}$asset")
+    ..createSync(recursive: true)
+    ..writeAsBytesSync(
+      byteData.buffer.asUint8List(
+        byteData.offsetInBytes,
+        byteData.lengthInBytes,
+      ),
     );
+  final Uint8List? thumbnail = await VideoThumbnail.thumbnailData(
+    video: tempVideo.path,
+  );
+
+  if (thumbnail != null) {
+    setState(() {
+      videoThumbnail = thumbnail;
+      listGalleryObject.add(
+        ImageObject(type: ImageType.video, path: asset, bytes: thumbnail),
+      );
+    });
   }
+}
 ```
 
-![Simple_Gallery Demo](demo_image/network_image_demo.gif "NetworkImage Demo")
+![Simple_Gallery Demo](demo_image/image_and_video_gallery_demo.gif "NetworkImage Demo")
 
 
 ## Custom the Gallery

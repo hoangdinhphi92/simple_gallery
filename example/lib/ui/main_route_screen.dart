@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:simple_gallery_example/ui/custom_image_gallery.dart';
-import 'package:simple_gallery_example/ui/local_and_network_gallery.dart';
+import 'package:simple_gallery_example/ui/image_and_video_gallery.dart';
 import 'package:simple_gallery_example/ui/network_image_gallery.dart';
 import 'package:simple_gallery_example/ui/local_image_gallery.dart';
 
-enum DestinationScreenType { local, network, both, custom }
+enum DestinationScreenType { local, network, imageAndVideo, custom }
 
 class MainRouteScreen extends StatelessWidget {
   const MainRouteScreen({super.key});
@@ -28,8 +28,8 @@ class MainRouteScreen extends StatelessWidget {
             ),
             _buildButton(
               context,
-              'Local And Network Image Gallery',
-              DestinationScreenType.both,
+              'Image And Video Gallery',
+              DestinationScreenType.imageAndVideo,
             ),
             _buildButton(
               context,
@@ -49,9 +49,9 @@ class MainRouteScreen extends StatelessWidget {
   ) {
     Widget destination = switch (screen) {
       DestinationScreenType.network => NetworkImageGallery(),
-      DestinationScreenType.both => LocalAndNetworkImageGallery(),
+      DestinationScreenType.imageAndVideo => ImageAndVideoGallery(),
       DestinationScreenType.local => LocalImageGallery(),
-      DestinationScreenType.custom => CustomImageGallery(),
+      DestinationScreenType.custom => CustomImageGallery()
     };
 
     return Padding(
