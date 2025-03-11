@@ -67,6 +67,20 @@ class _SimpleGalleryState<T extends Object> extends State<SimpleGallery<T>> {
   ScrollOffsetCalculator? _scrollOffsetCalculator;
 
   @override
+  void didUpdateWidget(SimpleGallery<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Check if any of the grid properties have changed
+    if (oldWidget.crossAxisCount != widget.crossAxisCount ||
+        oldWidget.crossAxisSpacing != widget.crossAxisSpacing ||
+        oldWidget.mainAxisSpacing != widget.mainAxisSpacing ||
+        oldWidget.childAspectRatio != widget.childAspectRatio ||
+        oldWidget.padding != widget.padding) {
+      _scrollOffsetCalculator = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {

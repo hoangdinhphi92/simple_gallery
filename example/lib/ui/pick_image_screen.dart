@@ -55,9 +55,6 @@ class _PickImageScreenState extends State<PickImageScreen> {
                   return Image.file(File(item), fit: BoxFit.contain);
                 },
                 pageGap: 16,
-                // footerBuilder: (context, items, item, pageController) {
-                //   return Text("data");
-                // },
               ),
             ),
           ),
