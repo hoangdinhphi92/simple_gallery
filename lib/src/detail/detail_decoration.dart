@@ -21,7 +21,7 @@ class DetailDecoration<T extends Object> {
   /// Gap between items when swiping in the PageView.
   final double pageGap;
 
-  /// Optional background widget for the detail screen.
+  /// Optional function for background widget in detail screen.
   final BackgroundBuilder? backgroundBuilder;
 
   DetailDecoration({
