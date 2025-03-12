@@ -5,8 +5,11 @@ import 'package:simple_gallery/src/detail/detail_page_screen.dart';
 typedef BackgroundBuilder = Widget? Function(BuildContext context);
 
 class DetailDecoration<T extends Object> {
+
+  /// A function that builds the widget for each detail item.
   final ItemBuilder<T> detailBuilder;
 
+  /// A function that provides a placeholder when the item size is null.
   final PlaceholderBuilder<T>? placeholderBuilder;
 
   /// Builder for the header widget (e.g., title, close button).
@@ -18,7 +21,7 @@ class DetailDecoration<T extends Object> {
   /// Gap between items when swiping in the PageView.
   final double pageGap;
 
-  /// Optional background widget for the detail screen.
+  /// Optional function for background widget in detail screen.
   final BackgroundBuilder? backgroundBuilder;
 
   DetailDecoration({
