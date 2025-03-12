@@ -285,6 +285,65 @@ Support you custom the GridView of list images with some properties:
 
 Using `detailDecoration` with `backgroundWidget`, `headerBuilder` & `footerBuilder` to custom the background, placeHolder, header & footer for detail widget in PageView
 
+```dart
+            backgroundBuilder: (context) => ColoredBox(color: Colors.white),
+            headerBuilder: _buildHeaderDetail,
+            footerBuilder: _buildFooterDetail,
+```
+
+And,
+
+```dart
+  Widget _buildFooterDetail(
+    BuildContext context,
+    List<NetworkImage> items,
+    NetworkImage image,
+    PageController controller,
+  ) {
+    return Material(
+      color: Colors.black54,
+      child: SizedBox(
+        height: 86,
+        child: Center(
+          child: Text(
+            'This is Footer',
+            style: TextStyle(fontSize: 35, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderDetail(
+    BuildContext context,
+    List<NetworkImage> items,
+    NetworkImage image,
+    PageController controller,
+  ) {
+    return Material(
+      color: Colors.black54,
+      child: SizedBox(
+        height: 86,
+        child: Column(
+          children: [
+            IconButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              icon: Icon(Icons.arrow_back),
+            ),
+            Expanded(
+              child: Text(
+                'This is Header',
+                style: TextStyle(fontSize: 20, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+```
 
 ![Simple Gallery Demo](demo_image/custom_header_footer.gif "Custom Detail Widget Demo")
 
