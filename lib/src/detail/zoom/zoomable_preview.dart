@@ -7,11 +7,14 @@ class ZoomablePreview extends StatefulWidget {
 
   final Widget child;
 
+  final VoidCallback onTap;
+
   const ZoomablePreview({
     super.key,
     required this.viewSize,
     required this.childSize,
     required this.child,
+    required this.onTap,
   });
 
   @override
@@ -23,6 +26,7 @@ class _ZoomablePreviewState extends State<ZoomablePreview> {
     context: context,
     viewSize: widget.viewSize,
     childSize: widget.childSize,
+    onTap: widget.onTap,
   );
 
   @override
