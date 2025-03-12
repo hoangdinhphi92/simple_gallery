@@ -1,7 +1,9 @@
 name: simple_gallery
-description: "A new Flutter project."
+description: "An easy way to display widgets as a gallery in full-screen with Hero animation, including pinch, zoom, drag & double tap to zoom."
 version: 0.0.1
-homepage:
+repository: https://github.com/hoangdinhphi92/simple_gallery
+issue_tracker: https://github.com/hoangdinhphi92/simple_gallery/issues
+homepage: https://github.com/hoangdinhphi92/simple_gallery
 
 environment:
   sdk: ^3.7.0
@@ -10,12 +12,4 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_web_plugins:
-    sdk: flutter
-  web: ^1.0.0
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^5.0.0
 
