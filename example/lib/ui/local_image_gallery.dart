@@ -41,6 +41,11 @@ class _LocalImageGalleryState extends State<LocalImageGallery> {
           _buildHeader(),
           Expanded(
             child: SimpleGallery<String>(
+              crossAxisCount: 5,
+              crossAxisSpacing: 8.0,
+              mainAxisSpacing: 8.0,
+              childAspectRatio: 1.0,
+              padding: const EdgeInsets.all(8.0),
               items: imageFiles,
               itemSize: (item) => getLocalImageSize(item),
               itemBuilder: (context, item, itemSize, viewSize) {

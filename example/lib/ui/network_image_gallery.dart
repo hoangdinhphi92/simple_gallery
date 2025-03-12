@@ -49,7 +49,7 @@ class _NetworkImageGalleryState extends State<NetworkImageGallery> {
             );
           },
           detailDecoration: DetailDecoration(
-            backgroundBuilder: (context) => ColoredBox(color: Colors.yellow),
+            backgroundBuilder: (context) => ColoredBox(color: Colors.white),
             headerBuilder: _buildHeaderDetail,
             footerBuilder: _buildFooterDetail,
             detailBuilder: (context, item, itemSize, viewSize) {
@@ -88,12 +88,15 @@ class _NetworkImageGalleryState extends State<NetworkImageGallery> {
     NetworkImage image,
     PageController controller,
   ) {
-    return ColoredBox(
-      color: Colors.red,
-      child: Center(
-        child: Text(
-          'This is Footer',
-          style: TextStyle(fontSize: 35, color: Colors.white),
+    return Material(
+      color: Colors.black54,
+      child: SizedBox(
+        height: 86,
+        child: Center(
+          child: Text(
+            'This is Footer',
+            style: TextStyle(fontSize: 35, color: Colors.white),
+          ),
         ),
       ),
     );
@@ -105,23 +108,26 @@ class _NetworkImageGalleryState extends State<NetworkImageGallery> {
     NetworkImage image,
     PageController controller,
   ) {
-    return ColoredBox(
-      color: Colors.red,
-      child: Column(
-        children: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            icon: Icon(Icons.arrow_back),
-          ),
-          Expanded(
-            child: Text(
-              'This is Header',
-              style: TextStyle(fontSize: 20, color: Colors.white),
+    return Material(
+      color: Colors.black54,
+      child: SizedBox(
+        height: 86,
+        child: Column(
+          children: [
+            IconButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              icon: Icon(Icons.arrow_back),
             ),
-          ),
-        ],
+            Expanded(
+              child: Text(
+                'This is Header',
+                style: TextStyle(fontSize: 20, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
