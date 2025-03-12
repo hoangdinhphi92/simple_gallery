@@ -18,9 +18,7 @@ It also can show any widgets, such as Image, Container, Text, a SVG or Video,...
 * No dependencies besides Flutter
 
 
-<p align="center">
-<img src="demo_image/app_demo.gif" alt="Simple Gallery Demo" />
-</p>
+![Simple Gallery Demo](demo_image/app_demo.gif?raw=true "Simple Gallery Demo")
 
 
 ## Installation
@@ -78,9 +76,7 @@ Note:
 > `itemSize` is the size of widget, it is required for Hero animation and cache image.
 
 
-<p align="center">
-<img src="demo_image/basic_usage_demo.gif" alt="Simple Gallery Basic Demo" />
-</p>
+![Simple Gallery Demo](demo_image/basic_usage_demo.gif?raw=true "Simple Gallery Basic Demo")
 
 
 ## Show difference type of widget
@@ -88,15 +84,186 @@ Note:
 You can use any types for gallery (SimpleGallery<YourType>) and custom the way that the content in both Gridview and PageView is displayed using `itemBuilder` & `detailBuilder`
 This example is displaying both image and video in gallery:
 
-<p align="center">
-<img src="demo_image/image_and_video_gallery_demo.gif" alt="Image & Video Gallery Demo" />
-</p>
+```dart
+@override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: SimpleGallery<ImageObject>(
+          items: listGalleryObject,
+          itemSize:
+              (item) =>
+                  item.type == ImageType.video
+                      ? getImageSizeFromBytes(item.bytes!)
+                      : getNetworkImageSize(item.path),
+          itemBuilder: (context, item, itemSize, viewSize) {
+            final itemType = item.type;
+            if (itemType == ImageType.video) {
+              return videoThumbnail != null
+                  ? Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image.memory(videoThumbnail!, fit: BoxFit.cover),
+                      ),
+                      Positioned.fill(
+                        child: Icon(Icons.play_circle, color: Colors.black54),
+                      ),
+                    ],
+                  )
+                  : CircularProgressIndicator();
+            } else {
+              return Image.network(
+                item.path,
+                fit: BoxFit.cover,
+                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                  if (wasSynchronouslyLoaded || frame != null) {
+                    return child;
+                  }
+                  return Center(
+                    child: ColoredBox(
+                      color: Colors.black38,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  );
+                },
+              );
+            }
+          },
+          placeholderBuilder: (context, item) {
+            return ColoredBox(
+              color: Colors.black38,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          },
+          detailDecoration: DetailDecoration(
+            placeholderBuilder: (context, item) {
+              return ColoredBox(
+                color: Colors.black38,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            },
+            detailBuilder: (context, item, itemSize, viewSize) {
+              final itemType = item.type;
+              if (itemType == ImageType.video) {
+                return controller.value.isInitialized
+                    ? AspectRatio(
+                      aspectRatio: controller.value.aspectRatio,
+                      child: VideoPlayer(controller),
+                    )
+                    : Center(child: CircularProgressIndicator());
+              } else {
+                return Image.network(
+                  item.path,
+                  fit: BoxFit.contain,
+                  frameBuilder: (
+                    context,
+                    child,
+                    frame,
+                    wasSynchronouslyLoaded,
+                  ) {
+                    if (wasSynchronouslyLoaded || frame != null) {
+                      return child;
+                    }
+                    return Center(
+                      child: ColoredBox(
+                        color: Colors.black38,
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    );
+                  },
+                );
+              }
+            },
+            pageGap: 16,
+          ),
+        ),
+      ),
+    );
+  }
+```
+
+![Simple Gallery Demo](demo_image/image_and_video_gallery_demo.gif?raw=true "Image & Video Gallery Demo")
+
 
 Or you can replace by any widgets to `itemBuilder` & `detailBuilder`:
 
-<p align="center">
-<img src="demo_image/custom_image_demo.gif" alt="Custom widgets Demo" />
-</p>
+```dart
+          itemBuilder: (context, item, itemSize, viewSize) {
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: Image(
+                    image: item,
+                    fit: BoxFit.cover,
+                    frameBuilder: (
+                      context,
+                      child,
+                      frame,
+                      wasSynchronouslyLoaded,
+                    ) {
+                      if (wasSynchronouslyLoaded || frame != null) {
+                        return child;
+                      }
+                      return Center(
+                        child: ColoredBox(
+                          color: Colors.black38,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Positioned(
+                  bottom: 5,
+                  right: 5,
+                  child: Icon(Icons.favorite, color: Colors.pink),
+                ),
+              ],
+            );
+          },
+```
+And,
+
+```dart
+            detailBuilder: (context, item, itemSize, viewSize) {
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: Image(
+                      image: item,
+                      fit: BoxFit.contain,
+                      frameBuilder: (
+                        context,
+                        child,
+                        frame,
+                        wasSynchronouslyLoaded,
+                      ) {
+                        if (wasSynchronouslyLoaded || frame != null) {
+                          return child;
+                        }
+                        return Center(
+                          child: ColoredBox(
+                            color: Colors.black38,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 5,
+                    right: 5,
+                    child: Icon(Icons.favorite, color: Colors.pink),
+                  ),
+                ],
+              );
+            },
+
+```
+
+
+![Simple Gallery Demo](demo_image/custom_image_demo.gif?raw=true "Custom widgets Demo")
+
 
 ## Custom the Gallery
 
@@ -110,17 +277,15 @@ Support you custom the GridView of list images with some properties:
    padding: const EdgeInsets.all(8.0),
 ```
 
-<p align="center">
-<img src="demo_image/custom_gridview_image.png" alt="Custom Gridview Demo" />
-</p>
+![Simple Gallery Demo](demo_image/custom_gridview_image.png "Custom Gridview Demo")
+
 
 
 ## Custom the placeHolder,header & footer in detail screen
 
 Using `detailDecoration` with `backgroundWidget`, `headerBuilder` & `footerBuilder` to custom the background, placeHolder, header & footer for detail widget in PageView
 
-<p align="center">
-<img src="demo_image/custom_header_footer.gif" alt="Custom Detail Widget Demo" />
-</p>
+
+![Simple Gallery Demo](demo_image/custom_header_footer.gif "Custom Detail Widget Demo")
 
 
