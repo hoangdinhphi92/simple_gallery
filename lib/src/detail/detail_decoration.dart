@@ -5,7 +5,6 @@ import 'package:simple_gallery/src/detail/detail_page_screen.dart';
 typedef BackgroundBuilder = Widget? Function(BuildContext context);
 
 class DetailDecoration<T extends Object> {
-
   /// A function that builds the widget for each detail item.
   final ItemBuilder<T> detailBuilder;
 

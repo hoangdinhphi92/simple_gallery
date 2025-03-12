@@ -17,7 +17,6 @@ typedef ItemBuilder<T extends Object> =
 typedef ItemSize<T extends Object> = Future<Size> Function(T item);
 
 class SimpleGallery<T extends Object> extends StatefulWidget {
-
   /// A list of items to be displayed in the gallery.
   final List<T> items;
 

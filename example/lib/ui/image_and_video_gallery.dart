@@ -12,12 +12,10 @@ class ImageAndVideoGallery extends StatefulWidget {
   const ImageAndVideoGallery({super.key});
 
   @override
-  State<ImageAndVideoGallery> createState() =>
-      _ImageAndVideoGalleryState();
+  State<ImageAndVideoGallery> createState() => _ImageAndVideoGalleryState();
 }
 
-class _ImageAndVideoGalleryState
-    extends State<ImageAndVideoGallery> {
+class _ImageAndVideoGalleryState extends State<ImageAndVideoGallery> {
   final asset = "assets/video.mp4";
 
   List<String> listNetworkImages = [

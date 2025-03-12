@@ -51,7 +51,7 @@ class MainRouteScreen extends StatelessWidget {
       DestinationScreenType.network => NetworkImageGallery(),
       DestinationScreenType.imageAndVideo => ImageAndVideoGallery(),
       DestinationScreenType.local => LocalImageGallery(),
-      DestinationScreenType.custom => CustomImageGallery()
+      DestinationScreenType.custom => CustomImageGallery(),
     };
 
     return Padding(
