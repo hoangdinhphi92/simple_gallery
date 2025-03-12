@@ -73,10 +73,10 @@ For example, to show several images with paths:
 ```
 
 Note: 
-> `itemSize` is the size of widget, it is required for Hero animation and cache image.
+> `itemSize` is the size of widget, it is required for Hero animation.
 
 
-![Simple Gallery Demo](demo_image/app_demo.gif?raw=true "Simple Gallery Basic Demo")
+![Simple Gallery Demo](demo_image/basic_usage_demo.gif?raw=true "Simple Gallery Basic Demo")
 
 
 ## Show difference type of widget
