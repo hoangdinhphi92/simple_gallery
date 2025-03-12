@@ -49,7 +49,7 @@ class _NetworkImageGalleryState extends State<NetworkImageGallery> {
             );
           },
           detailDecoration: DetailDecoration(
-            backgroundWidget: ColoredBox(color: Colors.yellow),
+            backgroundBuilder: (context) => ColoredBox(color: Colors.yellow),
             headerBuilder: _buildHeaderDetail,
             footerBuilder: _buildFooterDetail,
             detailBuilder: (context, item, itemSize, viewSize) {
@@ -82,7 +82,12 @@ class _NetworkImageGalleryState extends State<NetworkImageGallery> {
     );
   }
 
-  Widget _buildFooterDetail(BuildContext context, NetworkImage image) {
+  Widget _buildFooterDetail(
+    BuildContext context,
+    List<NetworkImage> items,
+    NetworkImage image,
+    PageController controller,
+  ) {
     return ColoredBox(
       color: Colors.red,
       child: Center(
@@ -94,7 +99,12 @@ class _NetworkImageGalleryState extends State<NetworkImageGallery> {
     );
   }
 
-  Widget _buildHeaderDetail(BuildContext context, NetworkImage image) {
+  Widget _buildHeaderDetail(
+    BuildContext context,
+    List<NetworkImage> items,
+    NetworkImage image,
+    PageController controller,
+  ) {
     return ColoredBox(
       color: Colors.red,
       child: Column(
