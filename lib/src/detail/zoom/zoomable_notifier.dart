@@ -168,6 +168,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   }
 
   bool canMovePointer = true;
+  bool canHandleTap = true;
 
   void onPointerMove(PointerMoveEvent event) {
     // Update the pointer position
@@ -668,6 +669,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   }
 
   Future<void> _handleTap() async {
+    if (!canHandleTap) return;
+    
     await Future.delayed(kDoubleTapDurationTimeout);
     if (!_isDoubleTap()) {
       onTap();
