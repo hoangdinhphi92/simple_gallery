@@ -167,9 +167,11 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
   }
 
+  bool canMovePointer = true;
+
   void onPointerMove(PointerMoveEvent event) {
     // Update the pointer position
-    if (!_activePointers.containsKey(event.pointer)) {
+    if (!canMovePointer || !_activePointers.containsKey(event.pointer)) {
       return;
     }
     _activePointers[event.pointer] = event.position;
