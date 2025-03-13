@@ -18,11 +18,11 @@ class ZoomablePreview extends StatefulWidget {
   });
 
   @override
-  State<ZoomablePreview> createState() => _ZoomablePreviewState();
+  State<ZoomablePreview> createState() => ZoomablePreviewState();
 }
 
-class _ZoomablePreviewState extends State<ZoomablePreview> {
-  late final ZoomableNotifier _zoomableNotifier = ZoomableNotifier(
+class ZoomablePreviewState extends State<ZoomablePreview> {
+  late final ZoomableNotifier zoomableNotifier = ZoomableNotifier(
     context: context,
     viewSize: widget.viewSize,
     childSize: widget.childSize,
@@ -31,21 +31,21 @@ class _ZoomablePreviewState extends State<ZoomablePreview> {
 
   @override
   void dispose() {
-    _zoomableNotifier.dispose();
+    zoomableNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: _zoomableNotifier,
+      valueListenable: zoomableNotifier,
       builder:
           (context, value, child) => Listener(
             behavior: HitTestBehavior.translucent,
-            onPointerDown: _zoomableNotifier.onPointerDown,
-            onPointerMove: _zoomableNotifier.onPointerMove,
-            onPointerUp: _zoomableNotifier.onPointerUp,
-            onPointerCancel: _zoomableNotifier.onPointerCancel,
+            onPointerDown: zoomableNotifier.onPointerDown,
+            onPointerMove: zoomableNotifier.onPointerMove,
+            onPointerUp: zoomableNotifier.onPointerUp,
+            onPointerCancel: zoomableNotifier.onPointerCancel,
             child: _buildChild(context, value),
           ),
     );
