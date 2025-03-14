@@ -131,23 +131,6 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   @override
   set value(ZoomableValue newValue) {
-    switch (newValue.state) {
-      case ZoomableState.moving:
-        if (_prohibitedActions.contains(ProhibitedAction.moving)) {
-          return;
-        }
-      case ZoomableState.movingPage:
-        if (_prohibitedActions.contains(ProhibitedAction.movingPage)) {
-          return;
-        }
-      case ZoomableState.dragging:
-        if (_prohibitedActions.contains(ProhibitedAction.dragging)) {
-          return;
-        }
-      default:
-        break;
-    }
-
     if (super.value.state != newValue.state) {
       _sendStateUpdateNotification(newValue.state);
     }
@@ -216,15 +199,21 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
         break;
 
       case ZoomableState.moving:
-        if (hasMovingPoint) _handleMoving(event.position);
+        if (!_prohibitedActions.contains(ProhibitedAction.moving) &&
+            hasMovingPoint)
+          _handleMoving(event.position);
         break;
 
       case ZoomableState.movingPage:
-        if (hasMovingPoint) _movingPage(event.position);
+        if (!_prohibitedActions.contains(ProhibitedAction.movingPage) &&
+            hasMovingPoint)
+          _movingPage(event.position);
         break;
 
       case ZoomableState.dragging:
-        if (hasMovingPoint) _dragging(event.position);
+        if (!_prohibitedActions.contains(ProhibitedAction.dragging) &&
+            hasMovingPoint)
+          _dragging(event.position);
         break;
       default:
         break;
