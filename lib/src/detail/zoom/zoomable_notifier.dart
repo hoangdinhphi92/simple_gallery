@@ -516,7 +516,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     final isMovingPage =
         (newX == value.position.dx &&
             newY == value.position.dy &&
-            delta != Offset.zero) ||
+            delta.dx != 0) ||
         (newX == value.position.dx && delta.dx.abs() > 8);
 
     if (isDragging) {
