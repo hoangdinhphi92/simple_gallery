@@ -133,9 +133,27 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   @override
   set value(ZoomableValue newValue) {
+    switch (newValue.state) {
+      case ZoomableState.moving:
+        if (value.prohibitedActions.contains(ProhibitedAction.moving)) {
+          return;
+        }
+      case ZoomableState.movingPage:
+        if (value.prohibitedActions.contains(ProhibitedAction.movingPage)) {
+          return;
+        }
+      case ZoomableState.dragging:
+        if (value.prohibitedActions.contains(ProhibitedAction.dragging)) {
+          return;
+        }
+      default:
+        break;
+    }
+
     if (super.value.state != newValue.state) {
       _sendStateUpdateNotification(newValue.state);
     }
+
     super.value = newValue;
   }
 
@@ -174,9 +192,6 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
   }
 
-  // bool canMovePointer = true;
-  // bool canHandleTap = true;
-
   void onPointerMove(PointerMoveEvent event) {
     // Update the pointer position
     if (!_activePointers.containsKey(event.pointer)) {
@@ -199,21 +214,15 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
         break;
 
       case ZoomableState.moving:
-        if (value.prohibitedActions.contains(ProhibitedAction.moving) &&
-            hasMovingPoint)
-          _handleMoving(event.position);
+        if (hasMovingPoint) _handleMoving(event.position);
         break;
 
       case ZoomableState.movingPage:
-        if (value.prohibitedActions.contains(ProhibitedAction.movingPage) &&
-            hasMovingPoint)
-          _movingPage(event.position);
+        if (hasMovingPoint) _movingPage(event.position);
         break;
 
       case ZoomableState.dragging:
-        if (value.prohibitedActions.contains(ProhibitedAction.dragging) &&
-            hasMovingPoint)
-          _dragging(event.position);
+        if (hasMovingPoint) _dragging(event.position);
         break;
       default:
         break;
