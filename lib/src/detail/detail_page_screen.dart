@@ -316,7 +316,7 @@ class _DetailPageScreenState<T extends Object>
         break;
     }
 
-    return false;
+    return true;
   }
 
   void _onZoomStateUpdate(ZoomStateUpdateNotification notification) {

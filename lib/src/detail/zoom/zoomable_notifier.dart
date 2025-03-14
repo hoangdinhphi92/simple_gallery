@@ -90,7 +90,6 @@ class ZoomableValue {
     double? minScale,
     double? maxScale,
     double? initScale,
-    List<ProhibitedAction>? prohibitedActions,
   }) {
     return ZoomableValue(
       viewSize: viewSize ?? this.viewSize,
