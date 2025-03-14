@@ -40,8 +40,6 @@ class ZoomableValue {
   final double maxScale;
   final double initScale;
 
-  final List<ProhibitedAction> prohibitedActions;
-
   const ZoomableValue({
     required this.viewSize,
     required this.childSize,
@@ -51,7 +49,6 @@ class ZoomableValue {
     this.maxScale = 5.0,
     this.initScale = 1.0,
     this.position = Offset.zero,
-    this.prohibitedActions = const [],
   });
 
   factory ZoomableValue.from(Size viewSize, Size childSize) {
@@ -104,7 +101,6 @@ class ZoomableValue {
       minScale: minScale ?? this.minScale,
       maxScale: maxScale ?? this.maxScale,
       initScale: initScale ?? this.initScale,
-      prohibitedActions: prohibitedActions ?? this.prohibitedActions,
     );
   }
 
@@ -124,6 +120,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   final VoidCallback onTap;
 
+  List<ProhibitedAction> _prohibitedActions = [];
+
   ZoomableNotifier({
     required this.context,
     required Size childSize,
@@ -135,15 +133,15 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   set value(ZoomableValue newValue) {
     switch (newValue.state) {
       case ZoomableState.moving:
-        if (value.prohibitedActions.contains(ProhibitedAction.moving)) {
+        if (_prohibitedActions.contains(ProhibitedAction.moving)) {
           return;
         }
       case ZoomableState.movingPage:
-        if (value.prohibitedActions.contains(ProhibitedAction.movingPage)) {
+        if (_prohibitedActions.contains(ProhibitedAction.movingPage)) {
           return;
         }
       case ZoomableState.dragging:
-        if (value.prohibitedActions.contains(ProhibitedAction.dragging)) {
+        if (_prohibitedActions.contains(ProhibitedAction.dragging)) {
           return;
         }
       default:
@@ -164,6 +162,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   Offset? _initialDragPosition;
   final List<PointerUpEvent> _pointerUpEvents = [];
   PointerDownEvent? _lastPointerDownEvent;
+
+  void setProhibitedActions(List<ProhibitedAction> prohibitedActions) {
+    _prohibitedActions = prohibitedActions;
+  }
 
   void onPointerDown(PointerDownEvent event) {
     if (_activePointers.length == 2 ||
@@ -691,7 +693,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   }
 
   Future<void> _handleTap() async {
-    if (value.prohibitedActions.contains(ProhibitedAction.tap)) return;
+    if (_prohibitedActions.contains(ProhibitedAction.tap)) return;
 
     await Future.delayed(kDoubleTapDurationTimeout);
     if (!_isDoubleTap()) {
