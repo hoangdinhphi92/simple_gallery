@@ -15,6 +15,8 @@ const kTapDistance = 1;
 const kTapDurationTimeout = Duration(milliseconds: 100);
 const kOneSecondInMs = 1000;
 
+enum ProhibitedAction { movingPage, dragging, moving, tap }
+
 enum ZoomableState {
   idle,
   zooming,
@@ -38,6 +40,8 @@ class ZoomableValue {
   final double maxScale;
   final double initScale;
 
+  final List<ProhibitedAction> prohibitedActions;
+
   const ZoomableValue({
     required this.viewSize,
     required this.childSize,
@@ -47,6 +51,7 @@ class ZoomableValue {
     this.maxScale = 5.0,
     this.initScale = 1.0,
     this.position = Offset.zero,
+    this.prohibitedActions = const [],
   });
 
   factory ZoomableValue.from(Size viewSize, Size childSize) {
@@ -88,6 +93,7 @@ class ZoomableValue {
     double? minScale,
     double? maxScale,
     double? initScale,
+    List<ProhibitedAction>? prohibitedActions,
   }) {
     return ZoomableValue(
       viewSize: viewSize ?? this.viewSize,
@@ -98,6 +104,7 @@ class ZoomableValue {
       minScale: minScale ?? this.minScale,
       maxScale: maxScale ?? this.maxScale,
       initScale: initScale ?? this.initScale,
+      prohibitedActions: prohibitedActions ?? this.prohibitedActions,
     );
   }
 
@@ -167,12 +174,12 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
   }
 
-  bool canMovePointer = true;
-  bool canHandleTap = true;
+  // bool canMovePointer = true;
+  // bool canHandleTap = true;
 
   void onPointerMove(PointerMoveEvent event) {
     // Update the pointer position
-    if ((!canMovePointer && _activePointers.length == 1) || !_activePointers.containsKey(event.pointer)) {
+    if (!_activePointers.containsKey(event.pointer)) {
       return;
     }
     _activePointers[event.pointer] = event.position;
@@ -192,15 +199,21 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
         break;
 
       case ZoomableState.moving:
-        if (hasMovingPoint) _handleMoving(event.position);
+        if (value.prohibitedActions.contains(ProhibitedAction.moving) &&
+            hasMovingPoint)
+          _handleMoving(event.position);
         break;
 
       case ZoomableState.movingPage:
-        if (hasMovingPoint) _movingPage(event.position);
+        if (value.prohibitedActions.contains(ProhibitedAction.movingPage) &&
+            hasMovingPoint)
+          _movingPage(event.position);
         break;
 
       case ZoomableState.dragging:
-        if (hasMovingPoint) _dragging(event.position);
+        if (value.prohibitedActions.contains(ProhibitedAction.dragging) &&
+            hasMovingPoint)
+          _dragging(event.position);
         break;
       default:
         break;
@@ -669,8 +682,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   }
 
   Future<void> _handleTap() async {
-    if (!canHandleTap) return;
-    
+    if (value.prohibitedActions.contains(ProhibitedAction.tap)) return;
+
     await Future.delayed(kDoubleTapDurationTimeout);
     if (!_isDoubleTap()) {
       onTap();
