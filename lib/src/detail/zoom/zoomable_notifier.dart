@@ -527,19 +527,20 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     final isDragging =
         newY == value.position.dy &&
         delta.dy > 0 &&
-        delta.dy.abs() > delta.dx.abs();
+        delta.dy.abs() > delta.dx.abs() &&
+        !_prohibitedActions.contains(ProhibitedAction.dragging);
 
     final isMovingPage =
-        (newX == value.position.dx &&
-            newY == value.position.dy &&
-            delta != Offset.zero) ||
-        (newX == value.position.dx && delta.dx.abs() > 8);
+        ((newX == value.position.dx &&
+                newY == value.position.dy &&
+                delta != Offset.zero) ||
+            (newX == value.position.dx && delta.dx.abs() > 8)) &&
+        !_prohibitedActions.contains(ProhibitedAction.movingPage);
 
-    if (isDragging && !_prohibitedActions.contains(ProhibitedAction.dragging)) {
+    if (isDragging) {
       _initialDragPosition = value.position;
       value = value.copyWith(state: ZoomableState.dragging);
-    } else if (isMovingPage &&
-        !_prohibitedActions.contains(ProhibitedAction.movingPage)) {
+    } else if (isMovingPage) {
       _sendOverScrollNotification(delta);
       value = value.copyWith(state: ZoomableState.movingPage);
     } else if (newX != value.position.dx || newY != value.position.dy) {
