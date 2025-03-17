@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:simple_gallery/simple_gallery.dart';
 import 'package:simple_gallery/src/detail/detail_page_screen.dart';
 
@@ -23,6 +24,12 @@ class DetailDecoration<T extends Object> {
   /// Optional function for background widget in detail screen.
   final BackgroundBuilder? backgroundBuilder;
 
+  /// System UI overlay style for the detail screen.
+  final SystemUiOverlayStyle? systemUiOverlayStyle;
+
+  /// Hide action buttons when tapping on the screen.
+  final bool tapToHide;
+
   DetailDecoration({
     required this.detailBuilder,
     this.placeholderBuilder,
@@ -30,5 +37,7 @@ class DetailDecoration<T extends Object> {
     this.footerBuilder,
     this.pageGap = 0.0,
     this.backgroundBuilder,
+    this.systemUiOverlayStyle,
+    this.tapToHide = true,
   });
 }

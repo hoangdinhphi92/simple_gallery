@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui show Codec, FrameInfo, Image, ImmutableBuffer;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:simple_gallery/simple_gallery.dart';
 import 'package:simple_gallery_example/utils/build_context_extension.dart';
@@ -109,6 +110,8 @@ class _LocalImageGalleryState extends State<LocalImageGallery> {
                   );
                 },
                 pageGap: 16,
+                systemUiOverlayStyle: SystemUiOverlayStyle.dark,
+                tapToHide: false,
               ),
             ),
           ),

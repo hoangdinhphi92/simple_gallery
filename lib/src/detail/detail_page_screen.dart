@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:simple_gallery/src/detail/detail_decoration.dart';
 import 'package:simple_gallery/src/detail/detail_item_preview.dart';
 import 'package:simple_gallery/src/detail/ui/detail_default_footer.dart';
@@ -40,6 +41,8 @@ Future<dynamic> showDetailPage<T extends Object>({
           footerBuilder: decoration.footerBuilder,
           pageGap: decoration.pageGap,
           backgroundBuilder: decoration.backgroundBuilder,
+          systemUiOverlayStyle: decoration.systemUiOverlayStyle,
+          tapToHide: decoration.tapToHide,
         );
       },
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -76,6 +79,12 @@ class DetailPageScreen<T extends Object> extends StatefulWidget {
   /// Optional background widget for the detail screen.
   final BackgroundBuilder? backgroundBuilder;
 
+  /// System UI overlay style for the detail screen.
+  final SystemUiOverlayStyle? systemUiOverlayStyle;
+
+  /// Hide action buttons when tapping on the screen.
+  final bool tapToHide;
+
   const DetailPageScreen({
     super.key,
     this.curItem,
@@ -89,6 +98,8 @@ class DetailPageScreen<T extends Object> extends StatefulWidget {
     this.footerBuilder,
     required this.pageGap,
     this.backgroundBuilder,
+    this.systemUiOverlayStyle,
+    this.tapToHide = true,
   });
 
   @override
@@ -109,7 +120,9 @@ class _DetailPageScreenState<T extends Object>
   }
 
   T? _currentItem;
+
   T? get currentItem => _currentItem ?? widget.curItem;
+
   set currentItem(T? value) {
     if (_currentItem != value && mounted) {
       _currentItem = value;
@@ -122,18 +135,23 @@ class _DetailPageScreenState<T extends Object>
 
   PageController? _controller;
 
-  bool _visibleHeader = false;
-  bool get visibleHeader => _visibleHeader;
-  set visibleHeader(bool value) {
-    if (_visibleHeader != value && mounted) {
-      _visibleHeader = value;
+  bool _overlayVisible = false;
+
+  bool get overlayVisible => _overlayVisible;
+
+  set overlayVisible(bool value) {
+    if (_overlayVisible != value && mounted) {
+      _overlayVisible = value;
       setState(() {});
     }
   }
 
+  SystemUiOverlayStyle? _lastSystemUiOverlayStyle;
+
   @override
   void initState() {
     super.initState();
+    _updateSystemUiOverlayStyle();
     _showHeaderAndFooterAfterPageTransition();
   }
 
@@ -151,7 +169,7 @@ class _DetailPageScreenState<T extends Object>
               top: 0,
               right: 0,
               child: _buildAnimatedOpacityWrapper(
-                visibleHeader,
+                overlayVisible,
                 child: _buildHeader(context, controller),
               ),
             ),
@@ -160,7 +178,7 @@ class _DetailPageScreenState<T extends Object>
               right: 0,
               bottom: 0,
               child: _buildAnimatedOpacityWrapper(
-                visibleHeader,
+                overlayVisible,
                 child: _buildFooter(context, controller),
               ),
             ),
@@ -191,7 +209,9 @@ class _DetailPageScreenState<T extends Object>
                   placeholderBuilder: widget.placeholderBuilder,
                   size: item == widget.curItem ? widget.currItemSize : null,
                   onTap: () {
-                    visibleHeader = !visibleHeader;
+                    if (widget.tapToHide) {
+                      overlayVisible = !overlayVisible;
+                    }
                   },
                 ),
               );
@@ -286,7 +306,7 @@ class _DetailPageScreenState<T extends Object>
 
       void handler(status) {
         if (status == AnimationStatus.completed) {
-          visibleHeader = true;
+          overlayVisible = true;
           route?.animation?.removeStatusListener(handler);
         }
       }
@@ -324,7 +344,7 @@ class _DetailPageScreenState<T extends Object>
       case ZoomableState.animating:
       case ZoomableState.zooming:
       case ZoomableState.dragging:
-        visibleHeader = false;
+        if (widget.tapToHide) overlayVisible = false;
       default:
         break;
     }
@@ -383,7 +403,22 @@ class _DetailPageScreenState<T extends Object>
 
   @override
   void dispose() {
+    _restoreSystemUiOverlayStyle();
     _controller?.removeListener(_onPageChanged);
     super.dispose();
+  }
+
+  void _updateSystemUiOverlayStyle() {
+    final style = widget.systemUiOverlayStyle;
+    if (style != null) {
+      _lastSystemUiOverlayStyle = SystemChrome.latestStyle;
+      SystemChrome.setSystemUIOverlayStyle(style);
+    }
+  }
+
+  void _restoreSystemUiOverlayStyle() {
+    if (_lastSystemUiOverlayStyle != null) {
+      SystemChrome.setSystemUIOverlayStyle(_lastSystemUiOverlayStyle!);
+    }
   }
 }

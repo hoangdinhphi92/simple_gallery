@@ -1,6 +1,6 @@
 name: simple_gallery
 description: "An easy way to display widgets as a gallery in full-screen with Hero animation, including pinch, zoom, drag & double tap to zoom."
-version: 0.0.2
+version: 0.0.3
 repository: https://github.com/hoangdinhphi92/simple_gallery
 issue_tracker: https://github.com/hoangdinhphi92/simple_gallery/issues
 homepage: https://github.com/hoangdinhphi92/simple_gallery

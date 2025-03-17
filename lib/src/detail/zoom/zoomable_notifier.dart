@@ -12,7 +12,7 @@ const kDragAnimationDuration = Duration(milliseconds: 250);
 const kDoubleTapDistance = 50;
 const kDoubleTapDurationTimeout = Duration(milliseconds: 200);
 const kTapDistance = 1;
-const kTapDurationTimeout = Duration(milliseconds: 100);
+const kTapDurationTimeout = Duration(milliseconds: 150);
 const kOneSecondInMs = 1000;
 
 enum ZoomableState {
