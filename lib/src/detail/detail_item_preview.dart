@@ -61,7 +61,7 @@ class _DetailItemPreviewState<T extends Object>
             viewSize: constraints.biggest,
             childSize: size,
             onTap: widget.onTap,
-            child: Hero(
+            buildChild: (notifier) => Hero(
               tag: widget.item,
               flightShuttleBuilder: _buildFlightShuttle,
               child: widget.itemBuilder(

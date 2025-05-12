@@ -15,7 +15,7 @@ const kTapDistance = 1;
 const kTapDurationTimeout = Duration(milliseconds: 100);
 const kOneSecondInMs = 1000;
 
-enum ProhibitedAction { movingPage, dragging, moving, tap }
+enum ProhibitedAction { movingPage, dragging, moving, tap, zooming }
 
 enum ZoomableState {
   idle,
@@ -145,6 +145,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
   final List<PointerUpEvent> _pointerUpEvents = [];
   PointerDownEvent? _lastPointerDownEvent;
 
+  Offset get lastTouchedPoint => _lastFocalPoint ?? Offset.zero;
+
   void setProhibitedActions(List<ProhibitedAction> prohibitedActions) {
     _prohibitedActions = prohibitedActions;
   }
@@ -170,8 +172,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     else if (_activePointers.length == 1 &&
         value.state != ZoomableState.animating) {
       _disposeAnimation();
-      value = value.copyWith(state: ZoomableState.moving);
       _lastFocalPoint = event.position;
+      value = value.copyWith(state: ZoomableState.moving);
       _velocityTracker.addPosition(event.timeStamp, event.position);
     }
   }
@@ -192,27 +194,32 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     // Handle the event based on the current state
     switch (value.state) {
       case ZoomableState.zooming:
-        if (_activePointers.length == 2 && _initialScaleDistance != null) {
+        if (!_prohibitedActions.contains(ProhibitedAction.zooming) &&
+            _activePointers.length == 2 &&
+            _initialScaleDistance != null) {
           _handleZooming();
         }
         break;
 
       case ZoomableState.moving:
         if (!_prohibitedActions.contains(ProhibitedAction.moving) &&
-            hasMovingPoint)
+            hasMovingPoint) {
           _handleMoving(event.position);
+        }
         break;
 
       case ZoomableState.movingPage:
         if (!_prohibitedActions.contains(ProhibitedAction.movingPage) &&
-            hasMovingPoint)
+            hasMovingPoint) {
           _movingPage(event.position);
+        }
         break;
 
       case ZoomableState.dragging:
         if (!_prohibitedActions.contains(ProhibitedAction.dragging) &&
-            hasMovingPoint)
+            hasMovingPoint) {
           _dragging(event.position);
+        }
         break;
       default:
         break;
@@ -250,7 +257,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
       value = value.copyWith(state: ZoomableState.moving);
       _initialScaleDistance = null;
-      _lastFocalPoint = _activePointers.values.first;
+      _lastFocalPoint = _activePointers.values.firstOrNull;
     }
   }
 
@@ -263,8 +270,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     } else if (_isTapped()) {
       await _handleTap();
     } else if (value.state == ZoomableState.dragging) {
-      final fraction =
-          (value.position - _initialDragPosition!).distance /
+      final fraction = (value.position - _initialDragPosition!).distance /
           (value.viewSize.shortestSide / 2);
       if (fraction > 0.5) {
         _sendDragEndNotification(true);
@@ -274,18 +280,18 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       }
     } else if (value.state == ZoomableState.movingPage) {
       _sendOverScrollEndNotification(pixelsPerSecond.dx);
-    } else if (pixelsPerSecond != Offset.zero &&
-        value.scale > value.initScale) {
+    } else if (value.scale > value.initScale &&
+        (pixelsPerSecond.dx.abs() > kMinFlingVelocity ||
+            pixelsPerSecond.dy.abs() > kMinFlingVelocity)) {
       await _fling(pixelsPerSecond);
     } else {
       await _validatePositionAndScale();
     }
 
     value = value.copyWith(
-      state:
-          value.scale != value.initScale
-              ? ZoomableState.zoomed
-              : ZoomableState.idle,
+      state: value.scale != value.initScale
+          ? ZoomableState.zoomed
+          : ZoomableState.idle,
     );
     _initialScaleDistance = null;
     _lastFocalPoint = null;
@@ -430,8 +436,10 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
     final newPosition = _calcValidPosition();
 
-    // Update position
-    return _animateToValue(newScale, newPosition);
+    if (newPosition != value.position) {
+      // Update position
+      return _animateToValue(newScale, newPosition);
+    }
   }
 
   Future<void> _fling(Offset pixelsPerSecond) async {
@@ -465,8 +473,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
       // Constrain if it exceeds
       var dx = newPosition.dx;
       if (pixelsPerSecond.dx.abs() > kMinFlingVelocity) {
-        dx =
-            dx +
+        dx = dx +
             (pixelsPerSecond.dx *
                 kFlingAnimationDuration.inMilliseconds /
                 kOneSecondInMs);
@@ -486,8 +493,7 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
       var dy = newPosition.dy;
       if (pixelsPerSecond.dy.abs() > kMinFlingVelocity) {
-        dy =
-            dy +
+        dy = dy +
             (pixelsPerSecond.dy *
                 kFlingAnimationDuration.inMilliseconds /
                 kOneSecondInMs);
@@ -523,17 +529,15 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     }
 
     // Update position if there's a change
-    final isDragging =
-        newY == value.position.dy &&
+    final isDragging = newY == value.position.dy &&
         delta.dy > 0 &&
         delta.dy.abs() > delta.dx.abs() &&
         !_prohibitedActions.contains(ProhibitedAction.dragging);
 
-    final isMovingPage =
-        ((newX == value.position.dx &&
-                newY == value.position.dy &&
-                delta != Offset.zero) ||
-            (newX == value.position.dx && delta.dx.abs() > 8)) &&
+    final isMovingPage = ((newX == value.position.dx &&
+        newY == value.position.dy &&
+        delta.dx != 0) ||
+        (newX == value.position.dx && delta.dx.abs() > 8)) &&
         !_prohibitedActions.contains(ProhibitedAction.movingPage);
 
     if (isDragging) {
@@ -585,11 +589,11 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
   // Animation logic for zooming
   Future<void> _animateToValue(
-    double newScale,
-    Offset newPosition, {
-    ZoomableState state = ZoomableState.animating,
-    Duration duration = kZoomAnimationDuration,
-  }) async {
+      double newScale,
+      Offset newPosition, {
+        ZoomableState state = ZoomableState.animating,
+        Duration duration = kZoomAnimationDuration,
+      }) async {
     _disposeAnimation();
 
     final controller = AnimationController(
@@ -649,12 +653,12 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
 
     final lastPointerUpEvent = _pointerUpEvents.last;
     final almostLastPointerUpEvent =
-        _pointerUpEvents[_pointerUpEvents.length - 2];
+    _pointerUpEvents[_pointerUpEvents.length - 2];
 
-    final isDoubleTap =
-        (lastPointerUpEvent.position - almostLastPointerUpEvent.position)
-                .distance <
-            kDoubleTapDistance &&
+    final isDoubleTap = (lastPointerUpEvent.position -
+        almostLastPointerUpEvent.position)
+        .distance <
+        kDoubleTapDistance &&
         (lastPointerUpEvent.timeStamp - almostLastPointerUpEvent.timeStamp) <
             kDoubleTapDurationTimeout;
 
@@ -676,8 +680,8 @@ class ZoomableNotifier extends ValueNotifier<ZoomableValue> {
     final isTap =
         (lastPointerDownEvent.position - lastPointerUpEvent.position).distance <
             kTapDistance &&
-        (lastPointerUpEvent.timeStamp - lastPointerDownEvent.timeStamp) <
-            kTapDurationTimeout;
+            (lastPointerUpEvent.timeStamp - lastPointerDownEvent.timeStamp) <
+                kTapDurationTimeout;
 
     return isTap;
   }
