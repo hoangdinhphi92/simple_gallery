@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:simple_gallery/simple_gallery.dart';
 import 'package:simple_gallery/src/detail/detail_decoration.dart';
 import 'package:simple_gallery/src/detail/detail_page_screen.dart';
 import 'package:simple_gallery/src/gallery/simple_item.dart';
@@ -12,6 +13,16 @@ typedef PlaceholderBuilder<T extends Object> =
 /// ItemBuilder is a function that builds a widget for the given item.
 typedef ItemBuilder<T extends Object> =
     Widget Function(BuildContext context, T item, Size itemSize, Size viewSize);
+
+/// DetailItemBuilder is a function that builds a widget for the given item in detail view.
+typedef DetailItemBuilder<T extends Object> =
+    Widget Function(
+      BuildContext context,
+      ZoomableNotifier notifier,
+      T item,
+      Size itemSize,
+      Size viewSize,
+    );
 
 /// ItemSize is a function that returns the size of the given item.
 typedef ItemSize<T extends Object> = Future<Size> Function(T item);
@@ -78,7 +89,9 @@ class _SimpleGalleryState<T extends Object> extends State<SimpleGallery<T>> {
   DetailDecoration<T> get detailDecoration =>
       widget.detailDecoration ??
       DetailDecoration(
-        detailBuilder: widget.itemBuilder,
+        detailBuilder:
+            (context, notifier, item, itemSize, viewSize) =>
+                widget.itemBuilder(context, item, itemSize, viewSize),
         placeholderBuilder: widget.placeholderBuilder,
       );
 

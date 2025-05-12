@@ -6,7 +6,7 @@ class DetailItemPreview<T extends Object> extends StatefulWidget {
   final T item;
   final Size? size;
   final ItemSize<T> itemSize;
-  final ItemBuilder<T> itemBuilder;
+  final DetailItemBuilder<T> itemBuilder;
   final PlaceholderBuilder<T>? placeholderBuilder;
   final VoidCallback onTap;
 
@@ -66,6 +66,7 @@ class _DetailItemPreviewState<T extends Object>
               flightShuttleBuilder: _buildFlightShuttle,
               child: widget.itemBuilder(
                 context,
+                notifier,
                 widget.item,
                 size,
                 constraints.biggest,

@@ -52,7 +52,7 @@ class _NetworkImageGalleryState extends State<NetworkImageGallery> {
             backgroundBuilder: (context) => ColoredBox(color: Colors.white),
             headerBuilder: _buildHeaderDetail,
             footerBuilder: _buildFooterDetail,
-            detailBuilder: (context, item, itemSize, viewSize) {
+            detailBuilder: (context, notifier, item, itemSize, viewSize) {
               return Image(
                 image: item,
                 fit: BoxFit.contain,

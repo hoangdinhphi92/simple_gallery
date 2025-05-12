@@ -6,7 +6,7 @@ typedef BackgroundBuilder = Widget? Function(BuildContext context);
 
 class DetailDecoration<T extends Object> {
   /// A function that builds the widget for each detail item.
-  final ItemBuilder<T> detailBuilder;
+  final DetailItemBuilder<T> detailBuilder;
 
   /// A function that provides a placeholder when the item size is null.
   final PlaceholderBuilder<T>? placeholderBuilder;

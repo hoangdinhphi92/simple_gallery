@@ -108,7 +108,7 @@ class _ImageAndVideoGalleryState extends State<ImageAndVideoGallery> {
                 child: Center(child: CircularProgressIndicator()),
               );
             },
-            detailBuilder: (context, item, itemSize, viewSize) {
+            detailBuilder: (context, notifier, item, itemSize, viewSize) {
               final itemType = item.type;
               if (itemType == ImageType.video) {
                 return controller.value.isInitialized

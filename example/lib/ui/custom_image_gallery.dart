@@ -68,7 +68,7 @@ class _CustomImageGalleryState extends State<CustomImageGallery> {
             );
           },
           detailDecoration: DetailDecoration(
-            detailBuilder: (context, item, itemSize, viewSize) {
+            detailBuilder: (context, notifier, item, itemSize, viewSize) {
               return Stack(
                 children: [
                   Positioned.fill(

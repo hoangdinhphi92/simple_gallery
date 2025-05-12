@@ -78,7 +78,7 @@ class _LocalImageGalleryState extends State<LocalImageGallery> {
                 );
               },
               detailDecoration: DetailDecoration(
-                detailBuilder: (context, item, itemSize, viewSize) {
+                detailBuilder: (context, notifier, item, itemSize, viewSize) {
                   return Image.file(
                     File(item),
                     fit: BoxFit.contain,

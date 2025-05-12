@@ -61,7 +61,7 @@ class DetailPageScreen<T extends Object> extends StatefulWidget {
   final ItemSize<T> itemSize;
 
   final ValueChanged<T>? onItemChanged;
-  final ItemBuilder<T> itemBuilder;
+  final DetailItemBuilder<T> itemBuilder;
   final PlaceholderBuilder<T>? placeholderBuilder;
 
   /// Builder for the header widget (e.g., title, close button).
